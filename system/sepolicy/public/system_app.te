@@ -1,0 +1,9 @@
+###
+### Apps that run with the system UID, e.g. com.android.system.ui,
+### com.android.settings.  These are not as privileged as the system
+### server.
+###
+
+type system_app, domain;
+allow system_app screencontrol_hwservice:hwservice_manager { find };
+allow system_app screen_control:binder { call };

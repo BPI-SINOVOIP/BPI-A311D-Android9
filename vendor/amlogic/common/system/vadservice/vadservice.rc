@@ -1,0 +1,7 @@
+on early-init
+    start vadservice
+
+service vadservice /vendor/bin/vadservice
+    user root
+    oneshot
+    group system root media audio

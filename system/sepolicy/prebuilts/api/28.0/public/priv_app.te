@@ -1,0 +1,7 @@
+###
+### A domain for further sandboxing privileged apps.
+###
+
+type priv_app, domain;
+allow priv_app screencontrol_hwservice:hwservice_manager { find };
+allow priv_app screen_control:binder call;
