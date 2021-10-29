@@ -24,27 +24,31 @@ LOCAL_CFLAGS += -Wno-unused-parameter -Wno-missing-field-initializers
 LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 
 ########################################################################################################
-CAMHAL_GIT_VERSION="$(shell cd $(LOCAL_PATH);git log | grep commit -m 1 | cut -d' ' -f 2)"
-CAMHAL_GIT_UNCOMMIT_FILE_NUM=$(shell cd $(LOCAL_PATH);git diff | grep +++ -c)
-CAMHAL_LAST_CHANGED="$(shell cd $(LOCAL_PATH);git log | grep Date -m 1)"
-CAMHAL_BUILD_TIME=" $(shell date)"
-CAMHAL_BUILD_NAME=" $(shell echo ${LOGNAME})"
-CAMHAL_BRANCH_NAME="$(shell cd $(LOCAL_PATH);git branch -a | sed -n '/'*'/p')"
-CAMHAL_BUILD_MODE=$(shell echo ${TARGET_BUILD_VARIANT})
-CAMHAL_HOSTNAME="$(shell hostname)"
-CAMHAL_IP="$(shell ifconfig eth0|grep -oE '([0-9]{1,3}\.?){4}'|head -n 1)"
-CAMHAL_PATH="$(shell pwd)/$(LOCAL_PATH)"
+HAVE_VERSION_INFO := false
 
-LOCAL_CFLAGS+=-DHAVE_VERSION_INFO
-LOCAL_CFLAGS+=-DCAMHAL_GIT_VERSION=\"${CAMHAL_GIT_VERSION}${CAMHAL_GIT_DIRTY}\"
-LOCAL_CFLAGS+=-DCAMHAL_BRANCH_NAME=\"${CAMHAL_BRANCH_NAME}\"
-LOCAL_CFLAGS+=-DCAMHAL_LAST_CHANGED=\"${CAMHAL_LAST_CHANGED}\"
-LOCAL_CFLAGS+=-DCAMHAL_BUILD_TIME=\"${CAMHAL_BUILD_TIME}\"
-LOCAL_CFLAGS+=-DCAMHAL_BUILD_NAME=\"${CAMHAL_BUILD_NAME}\"
-LOCAL_CFLAGS+=-DCAMHAL_GIT_UNCOMMIT_FILE_NUM=${CAMHAL_GIT_UNCOMMIT_FILE_NUM}
-LOCAL_CFLAGS+=-DCAMHAL_HOSTNAME=\"${CAMHAL_HOSTNAME}\"
-LOCAL_CFLAGS+=-DCAMHAL_IP=\"${CAMHAL_IP}\"
-LOCAL_CFLAGS+=-DCAMHAL_PATH=\"${CAMHAL_PATH}\"
+ifeq ($(strip $(HAVE_VERSION_INFO)),)
+    CAMHAL_GIT_VERSION="$(shell cd $(LOCAL_PATH);git log | grep commit -m 1 | cut -d' ' -f 2)"
+    CAMHAL_GIT_UNCOMMIT_FILE_NUM=$(shell cd $(LOCAL_PATH);git diff | grep +++ -c)
+    CAMHAL_LAST_CHANGED="$(shell cd $(LOCAL_PATH);git log | grep Date -m 1)"
+    CAMHAL_BUILD_TIME=" $(shell date)"
+    CAMHAL_BUILD_NAME=" $(shell echo ${LOGNAME})"
+    CAMHAL_BRANCH_NAME="$(shell cd $(LOCAL_PATH);git branch -a | sed -n '/'*'/p')"
+    CAMHAL_BUILD_MODE=$(shell echo ${TARGET_BUILD_VARIANT})
+    CAMHAL_HOSTNAME="$(shell hostname)"
+    CAMHAL_IP="$(shell ifconfig eth0|grep -oE '([0-9]{1,3}\.?){4}'|head -n 1)"
+    CAMHAL_PATH="$(shell pwd)/$(LOCAL_PATH)"
+
+    LOCAL_CFLAGS+=-DHAVE_VERSION_INFO
+    LOCAL_CFLAGS+=-DCAMHAL_GIT_VERSION=\"${CAMHAL_GIT_VERSION}${CAMHAL_GIT_DIRTY}\"
+    LOCAL_CFLAGS+=-DCAMHAL_BRANCH_NAME=\"${CAMHAL_BRANCH_NAME}\"
+    LOCAL_CFLAGS+=-DCAMHAL_LAST_CHANGED=\"${CAMHAL_LAST_CHANGED}\"
+    LOCAL_CFLAGS+=-DCAMHAL_BUILD_TIME=\"${CAMHAL_BUILD_TIME}\"
+    LOCAL_CFLAGS+=-DCAMHAL_BUILD_NAME=\"${CAMHAL_BUILD_NAME}\"
+    LOCAL_CFLAGS+=-DCAMHAL_GIT_UNCOMMIT_FILE_NUM=${CAMHAL_GIT_UNCOMMIT_FILE_NUM}
+    LOCAL_CFLAGS+=-DCAMHAL_HOSTNAME=\"${CAMHAL_HOSTNAME}\"
+    LOCAL_CFLAGS+=-DCAMHAL_IP=\"${CAMHAL_IP}\"
+    LOCAL_CFLAGS+=-DCAMHAL_PATH=\"${CAMHAL_PATH}\"
+endif
 ########################################################################################################
 GE2D_ENABLE := true
 GE2D_VERSION_2 := true

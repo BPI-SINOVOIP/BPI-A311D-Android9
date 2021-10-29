@@ -69,6 +69,8 @@ else
 endif
 export Q
 
+GIT_VERSION := false
+
 ifeq (${GIT_VERSION},)
 	GIT_VERSION := $(shell git describe --abbrev=7 --dirty --always --tags)
 endif

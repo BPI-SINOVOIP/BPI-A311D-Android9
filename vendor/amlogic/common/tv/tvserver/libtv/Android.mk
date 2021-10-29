@@ -159,6 +159,7 @@ LOCAL_C_INCLUDES += \
 LOCAL_LDLIBS  += -L$(SYSROOT)/usr/lib -llog
 
 LOCAL_PRELINK_MODULE := false
+BOARD_TVAPI_NO_VERSION := true
 
 # version
 ifeq ($(strip $(BOARD_TVAPI_NO_VERSION)),)
