@@ -1,0 +1,2 @@
+require board=bananapi_m2s
+require version-bootloader=01.01.180822.152145

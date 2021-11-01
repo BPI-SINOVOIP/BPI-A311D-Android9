@@ -153,6 +153,13 @@
     <string name="device_tv_audio_arc">Arc</string>
     <string name="device_audio_spdif">Spdif</string>
 
+    <string name="screen_brightness">Screen brightness</string>
+    <string name="screen_rotation">Screen rotation</string>
+    <string name="screen_rotation_0">0</string>
+    <string name="screen_rotation_90">90</string>
+    <string name="screen_rotation_180">180</string>
+    <string name="screen_rotation_270">270</string>
+
     <!-- Image description for the sync failed icon. -->
     <string name="sync_failed">Sync failed</string>
     <!-- Animation description for the sync active icon. -->
@@ -430,8 +437,16 @@
     <string name="panel720port">720X1280</string>
     <string name="panel1080">1920X1080</string>
     <string name="panel1080port">1080X1920</string>
-	<string name="panel800port1">800X1280_1</string>
-	<string name="panel800port2">800X1280_2</string>
-	<string name="panel800port3">800X1280_3</string>
-	<string name="panel800port4">800X1280_4</string>
+    <string name="panel800port1">800X1280_1</string>
+    <string name="panel800port2">800X1280_2</string>
+    <string name="panel800port3">800X1280_3</string>
+    <string name="panel800port4">800X1280_4</string>
+    
+    <string name="screen_density">Screen density control</string>
+    <string name="screen_density_120">120</string>
+    <string name="screen_density_160">160</string>
+    <string name="screen_density_200">200</string>
+    <string name="screen_density_240">240</string>
+    <string name="screen_density_280">280</string>
+    <string name="screen_density_320">320</string>
 </resources>

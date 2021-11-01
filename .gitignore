@@ -1,0 +1,12 @@
+/bootloader/uboot-repo/build
+/bootloader/uboot-repo/fip/_tmp
+/out
+/tools/dexter/testdata/expected/large.verbose_cfg
+/tools/dexter/testdata/expected/large.code_coverage
+/tools/external/gradle/gradle-api-3.5-20170307000048+0000.jar
+/prebuilts/clang/host/linux-x86/profiles/6.0.1.profdata
+/prebuilts/misc/common/robolectric/android-all/android-all-8.1.0-robolectric-r4458339.jar
+/prebuilts/tools/linux-x86_64/bazel/bazel-real
+/prebuilts/tools/darwin-x86_64/bazel/bazel-real
+/prebuilts/jdk/jdk9/darwin-x86/lib/modules
+/prebuilts/jdk/jdk9/linux-x86/lib/modules

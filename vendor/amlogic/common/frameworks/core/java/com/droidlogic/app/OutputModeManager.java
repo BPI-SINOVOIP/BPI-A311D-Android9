@@ -73,6 +73,8 @@ public class OutputModeManager {
     public static final String HDMI_SUPPORT_LIST            = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
     public static final String HDMI_COLOR_SUPPORT_LIST      = "/sys/class/amhdmitx/amhdmitx0/dc_cap";
 
+	public static final String HDMI_VESA_SUPPORT_LIST       = "/sys/class/amhdmitx/amhdmitx0/vesa_cap";
+
     public static final String COLOR_ATTRIBUTE              = "/sys/class/amhdmitx/amhdmitx0/attr";
     public static final String DISPLAY_HDMI_VALID_MODE      = "/sys/class/amhdmitx/amhdmitx0/valid_mode";//test if tv support this mode
 
@@ -498,6 +500,14 @@ public class OutputModeManager {
 
         if (DEBUG)
             Log.d(TAG, "getHdmiSupportList :" + list);
+        return list;
+    }
+
+	public String getHdmiVesaSupportList() {
+        String list = readSupportList(HDMI_VESA_SUPPORT_LIST).replaceAll("[*]", "");
+
+        if (DEBUG)
+            Log.d(TAG, "getHdmiVesaSupportList :" + list);
         return list;
     }
 

@@ -25,6 +25,26 @@
 #include <mpc8xx.h>
 #endif
 
+#define CONFIG_LOAD_LINUX
+
+#if defined(CONFIG_LOAD_LINUX)
+#include <linux/ctype.h>
+
+static
+int check_linux_boot_script(ulong addr, char *product)
+{
+	char *buf;
+	char magic[32];
+	int size = snprintf(magic, sizeof(magic), "%s-uboot-config\n", product);
+
+	buf = map_sysmem(addr, 0);
+	if (strncasecmp(magic, buf, size))
+		return -EINVAL;
+
+	return size;
+}
+#endif
+
 int
 source (ulong addr, const char *fit_uname)
 {
@@ -32,7 +52,7 @@ source (ulong addr, const char *fit_uname)
 #if defined(CONFIG_IMAGE_FORMAT_LEGACY)
 	const image_header_t *hdr;
 #endif
-	ulong		*data;
+	u32		*data;
 	int		verify;
 	void *buf;
 #if defined(CONFIG_FIT)
@@ -40,6 +60,9 @@ source (ulong addr, const char *fit_uname)
 	int		noffset;
 	const void	*fit_data;
 	size_t		fit_len;
+#endif
+#if defined(CONFIG_LOAD_LINUX)
+	int size;
 #endif
 
 	verify = getenv_yesno ("verify");
@@ -73,7 +96,7 @@ source (ulong addr, const char *fit_uname)
 		}
 
 		/* get length of script */
-		data = (ulong *)image_get_data (hdr);
+		data = (u32 *)image_get_data (hdr);
 
 		if ((len = uimage_to_cpu (*data)) == 0) {
 			puts ("Empty Script\n");
@@ -127,13 +150,24 @@ source (ulong addr, const char *fit_uname)
 			return 1;
 		}
 
-		data = (ulong *)fit_data;
+		data = (u32 *)fit_data;
 		len = (ulong)fit_len;
 		break;
 #endif
 	default:
+#if defined(CONFIG_LOAD_LINUX)
+		size = check_linux_boot_script(addr, CONFIG_DEVICE_PRODUCT);
+		if (size > 0) {
+			data = (u32*)(addr + size);
+			len = simple_strtoul(getenv("filesize"), NULL, 16) - size;
+		} else {
+			puts ("Wrong image format for \"source\" command\n");
+			return 1;
+		}
+#else
 		puts ("Wrong image format for \"source\" command\n");
 		return 1;
+#endif
 	}
 
 	debug ("** Script length: %ld\n", len);

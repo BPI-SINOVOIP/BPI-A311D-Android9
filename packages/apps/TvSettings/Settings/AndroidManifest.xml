@@ -641,7 +641,8 @@
         </activity>
 
         <!-- Triggered when user-selected home app isn't encryption aware -->
-        <activity android:name=".system.FallbackHome"
+        <!-- bpi, disable FallbackHome when com.android.settings exist
+	<activity android:name=".system.FallbackHome"
                   android:excludeFromRecents="true"
                   android:theme="@style/FallbackHome"
                   android:configChanges="locale|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection" >
@@ -651,6 +652,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+	-->
 
         <activity android:name=".inputmethod.InputMethodAndSubtypeEnablerActivity"
                   android:label=""

@@ -18,6 +18,8 @@ LOCAL_SHARED_LIBRARIES+=libcutils liblog libc
 
 LOCAL_PRELINK_MODULE := false
 
+BOARD_DVB_NO_VERSION := true
+
 ifeq ($(strip $(BOARD_DVB_NO_VERSION)),)
     $(shell cd $(LOCAL_PATH);touch am_ver.c)
     LIBDVB_GIT_VERSION="$(shell cd $(LOCAL_PATH);git log | grep commit -m 1 | cut -d' ' -f 2)"
