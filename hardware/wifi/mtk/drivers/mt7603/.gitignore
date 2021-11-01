@@ -25,3 +25,4 @@ modules.builtin
 *.ko.cmd
 .tmp_versions/
 Module.symvers
+/tools/bin2h
