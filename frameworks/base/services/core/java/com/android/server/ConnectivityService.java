@@ -5162,7 +5162,8 @@ public class ConnectivityService extends IConnectivityManager.Stub
                 break;
             }
         }
-        nai.asyncChannel.disconnect();
+        loge("[BPI] Donot disconnect network " + nai.name());
+        //nai.asyncChannel.disconnect();
     }
 
     private void handleLingerComplete(NetworkAgentInfo oldNetwork) {

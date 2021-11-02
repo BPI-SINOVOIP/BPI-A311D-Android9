@@ -6,6 +6,9 @@ on early-init
     #mount usbfs none /proc/bus/usb
     insmod /vendor/lib/modules/mali.ko
 
+    # eth1
+    insmod /vendor/lib/modules/r8168.ko
+
 on init
 
 on late-init
@@ -47,3 +50,15 @@ on boot
 on property:sys.boot_completed=1
     insmod /vendor/lib/modules/galcore.ko
     chmod 666 /dev/galcore
+
+service dhclient_eth1 /system/bin/dhclient -6 -nw -d eth1
+    class main
+    disabled
+    oneshot
+        seclabel u:object_r:dhclient_exec:s0
+
+service release6_eth1 /system/bin/dhclient -6 -r eth1
+    class main
+    disabled
+    oneshot
+        seclabel u:object_r:dhclient_exec:s0

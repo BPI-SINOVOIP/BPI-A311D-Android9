@@ -77,6 +77,8 @@ final class EthernetTracker {
     private final Handler mHandler;
     private final EthernetNetworkFactory mFactory;
     private final EthernetConfigStore mConfigStore;
+    private Context mContext;
+    private EthernetNetworkFactoryExt mEthernetNetworkFactoryExt;
 
     private final RemoteCallbackList<IEthernetServiceListener> mListeners =
             new RemoteCallbackList<>();
@@ -85,6 +87,7 @@ final class EthernetTracker {
 
     EthernetTracker(Context context, Handler handler) {
         mHandler = handler;
+        mContext = context;
 
         // The services we use.
         IBinder b = ServiceManager.getService(Context.NETWORKMANAGEMENT_SERVICE);
@@ -106,6 +109,7 @@ final class EthernetTracker {
         NetworkCapabilities nc = createNetworkCapabilities(true /* clear default capabilities */);
         mFactory = new EthernetNetworkFactory(handler, context, nc);
         mFactory.register();
+        mEthernetNetworkFactoryExt = new EthernetNetworkFactoryExt();
     }
 
     void start() {
@@ -125,6 +129,7 @@ final class EthernetTracker {
         }
 
         mHandler.post(this::trackAvailableInterfaces);
+        mEthernetNetworkFactoryExt.start(mContext, mNMService);
     }
 
     void updateIpConfiguration(String iface, IpConfiguration ipConfiguration) {
@@ -272,16 +277,19 @@ final class EthernetTracker {
                 Log.i(TAG, "interfaceLinkStateChanged, iface: " + iface + ", up: " + up);
             }
             mHandler.post(() -> updateInterfaceState(iface, up));
+            mEthernetNetworkFactoryExt.interfaceLinkStateChanged(iface, up);
         }
 
         @Override
         public void interfaceAdded(String iface) {
             mHandler.post(() -> maybeTrackInterface(iface));
+            mEthernetNetworkFactoryExt.interfaceAdded(iface);
         }
 
         @Override
         public void interfaceRemoved(String iface) {
             mHandler.post(() -> removeInterface(iface));
+            mEthernetNetworkFactoryExt.interfaceRemoved(iface);
         }
     }
 

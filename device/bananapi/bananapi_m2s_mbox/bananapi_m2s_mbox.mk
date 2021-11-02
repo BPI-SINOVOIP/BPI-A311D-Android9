@@ -300,6 +300,8 @@ include device/bananapi/common/audio.mk
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.camera.external.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.external.xml
 
+NEED_ISP := true
+
 #########################################################################
 #
 #                                                GDC
@@ -498,6 +500,7 @@ endif
 #########################################################################
 AUTO_PATCH_SHELL_FILE := vendor/amlogic/common/tools/auto_patch/auto_patch.sh
 AUTO_PATCH_AB := vendor/amlogic/common/tools/auto_patch/auto_patch_ab.sh
+#bpi, disable auto patch after first build
 #HAVE_WRITED_SHELL_FILE := $(shell test -f $(AUTO_PATCH_SHELL_FILE) && echo yes)
 
 ifneq ($(TARGET_BUILD_LIVETV),true)
@@ -514,11 +517,15 @@ endif
 endif
 #########################################################################
 #
-#                            Camera
+#                            Ethernet
 #
 #########################################################################
-NEED_ISP := true
-
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.net.eth1.mode=1 \
+    persist.dhcpserver.enable=1 \
+    persist.net.eth1.staticinfo=172.16.1.1,24,172.16.1.1,114.114.114.114,8.8.8.8 \
+    persist.dhcpserver.start=172.16.1.100 \
+    persist.dhcpserver.end=172.16.1.150
 #########################################################################
 #
 #                            apps
