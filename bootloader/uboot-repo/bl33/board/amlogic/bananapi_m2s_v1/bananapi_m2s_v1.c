@@ -63,6 +63,7 @@
 #include <amlogic/spicc.h>
 #endif
 #include <asm/arch/timer.h>
+#include <asm/saradc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -646,7 +647,52 @@ U_BOOT_DEVICES(meson_pwm) = {
 };
 #endif /*end CONFIG_PWM_MESON*/
 
-extern void aml_pwm_cal_init(int mode);
+#define IS_RANGE(x, min, max)   ((x) > (min) && (x) < (max))
+/*
+ * Board revision in the form of YYYYMMDD as hexadecimal
+ * ex) BOARD_REVISION(2018, 07, 16)  -> 0x20180716
+ */
+
+#define BOARD_REVISION(y,m,d)   (((0x##y & 0xffff) << 16) \
+                | ((0x##m & 0xff) << 8) | ((0x##d & 0xff) << 0))
+
+#define BOARD_TYPE_CHANNEL			0
+#define BOARD_REV_CHANNEL			1
+
+int get_adc_value(int channel)
+{
+	int val;
+
+	saradc_enable();
+	(void)get_adc_sample_gxbb(channel);     /* THROW AWAY !! */
+	val = get_adc_sample_gxbb(channel);
+	saradc_disable();
+
+	printf("ADC=%d\n", val);
+	return val;
+}
+
+void get_hw_revision(void)
+{
+	int val;
+
+	val = get_adc_value(BOARD_TYPE_CHANNEL);
+	if (IS_RANGE(val, 80, 100)) {
+		//board is s922x_m2s
+	}
+	else if (IS_RANGE(val, 900, 1100)) {
+		//board is a311d_m2s
+	}
+
+	val = get_adc_value(BOARD_REV_CHANNEL);
+	if (IS_RANGE(val, 900, 1100)) {     /* avg : 90 */
+		printf("BPI hw revision: bananapi_m2s_v1\n");
+
+		/* set env for linux image dtb load */
+		setenv("variant", "bananapi_m2s");
+		setenv("board", "bpi-m2s");
+	}
+}
 
 int board_init(void)
 {
@@ -742,6 +788,8 @@ int board_late_init(void)
 		aml_try_factory_usb_burning(1, gd->bd);
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
+
+	get_hw_revision();
 
 	TE(__func__);
 	return 0;
