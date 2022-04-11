@@ -17,15 +17,8 @@
 #ifndef _BDROID_BUILDCFG_H
 #define _BDROID_BUILDCFG_H
 
-#define BLE_VND_INCLUDED TRUE
+#define BTM_DEF_LOCAL_NAME    "Bananapi"
 
-// Turn off BLE_PRIVACY_SPT.  Remote reconnect fails on
-// often if this is enabled.
-#define BLE_PRIVACY_SPT TRUE
+#define BTA_AV_SINK_INCLUDED TRUE
 
-/* minimum acceptable connection interval */
-#define BTM_BLE_CONN_INT_MIN_LIMIT 0x0006  /*7.5ms=6*1.25*/
-
-/*fix bt crash about init */
-#define KERNEL_MISSING_CLOCK_BOOTTIME_ALARM TRUE
 #endif

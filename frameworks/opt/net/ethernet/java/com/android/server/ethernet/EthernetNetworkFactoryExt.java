@@ -90,35 +90,37 @@ class EthernetNetworkFactoryExt {
     private EthernetManager mEthernetManager;
     private StaticIpConfiguration mStaticIpConfiguration;
 
-	public EthernetNetworkFactoryExt() {
+    public EthernetNetworkFactoryExt() {
+        Log.v(TAG, "EthernetNetworkFactoryExt");
+        mIface = SystemProperties.get("ro.net.eth_secondary", "eth1");
         HandlerThread handlerThread = new HandlerThread("EthernetNetworkFactoryExtThread");
         handlerThread.start();
         mHandler = new EthernetNetworkFactoryExtHandler(handlerThread.getLooper(), this);
         mConnectState = 0;
         mIpClient = null;
-	}
+    }
 
-	private class EthernetNetworkFactoryExtHandler extends Handler {
-		private EthernetNetworkFactoryExt mEthernetNetworkFactoryExt;
-		
-		public EthernetNetworkFactoryExtHandler(Looper looper, EthernetNetworkFactoryExt factory) {
-			super(looper);
-			mEthernetNetworkFactoryExt = factory;
-		}
-		
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-				case EVENT_INTERFACE_LINK_STATE_CHANGED:
-					if(msg.arg1 == 1) {
-						mEthernetNetworkFactoryExt.connect();
-					} else {
-						mEthernetNetworkFactoryExt.disconnect();
-					}
-				break;
-			}
-		}
-	}
+    private class EthernetNetworkFactoryExtHandler extends Handler {
+        private EthernetNetworkFactoryExt mEthernetNetworkFactoryExt;
+
+        public EthernetNetworkFactoryExtHandler(Looper looper, EthernetNetworkFactoryExt factory) {
+            super(looper);
+            mEthernetNetworkFactoryExt = factory;
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case EVENT_INTERFACE_LINK_STATE_CHANGED:
+                    if(msg.arg1 == 1) {
+                        mEthernetNetworkFactoryExt.connect();
+                    } else {
+                        mEthernetNetworkFactoryExt.disconnect();
+                    }
+                break;
+            }
+        }
+    }
 
     private void setInterfaceUp(String iface) {
         try {
@@ -127,21 +129,32 @@ class EthernetNetworkFactoryExt {
             Log.e(TAG, "Error upping interface " + iface + ": " + e);
         }
     }
-    
+
     private void addToLocalNetwork(String iface, List<RouteInfo> routes) {
-		try {
-			mNMService.addInterfaceToLocalNetwork(iface, routes);
-		} catch (RemoteException e) {
-			Log.e(TAG, "Failed to add iface to local network " + e);
-		}
-	}
+        Log.d(TAG, "addToLocalNetwork: iface = " + iface);
+        try {
+            mNMService.addInterfaceToLocalNetwork(iface, routes);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Failed to add iface to local network " + e);
+        }
+    }
+
+    private void removeToLocalNetwork(String iface) {
+        Log.d(TAG, "removeToLocalNetwork: iface = " + iface);
+        try {
+            mNMService.removeInterfaceFromLocalNetwork(iface);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Failed to remove iface to local network " + e);
+        }
+    }
 
     public void start(Context context, INetworkManagementService s) {
-    	mContext = context;
-    	mNMService = s;
+        mContext = context;
+        mNMService = s;
         mEthernetManager = (EthernetManager) context.getSystemService(Context.ETHERNET_SERVICE);
         try {
             final String[] ifaces = mNMService.listInterfaces();
+            Log.e(TAG, "get list of interfaces " + ifaces[0]);
             for (String iface : ifaces) {
                 synchronized(this) {
                     if (mIface.equals(iface)) {
@@ -154,280 +167,257 @@ class EthernetNetworkFactoryExt {
             Log.e(TAG, "Could not get list of interfaces " + e);
         }
     }
-    
-	public void interfaceLinkStateChanged(String iface, boolean up) {
-		Log.d(TAG, "interfaceLinkStateChanged: iface = " + iface + ", up = " + up);
-		if (!mIface.equals(iface))
-			return;
-		if (mLinkUp == up)
-			return;
 
-		mLinkUp = up;
-		if (up) {
-			mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
-			mHandler.sendMessageDelayed(mHandler.obtainMessage(EVENT_INTERFACE_LINK_STATE_CHANGED, 1, 0),
-							EVENT_INTERFACE_LINK_STATE_CHANGED_DELAY_MS);
-		} else {
-			mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
-			mHandler.sendMessageDelayed(mHandler.obtainMessage(EVENT_INTERFACE_LINK_STATE_CHANGED, 0, 0),
-							0);			
-		}
-	}
-	
-	/* For Android 5.x and Android 6.0 */
-	/*private boolean startDhcp(String iface) {
-		NetworkUtils.stopDhcp(iface);
-		Log.d(TAG, "runDhcp");
-		DhcpResults dhcpResults = new DhcpResults();
-		if (!NetworkUtils.runDhcp(iface, dhcpResults)) {
-			Log.e(TAG, "runDhcp failed for " + iface);
-			return false;
-		}
-		mLinkProperties = dhcpResults.toLinkProperties(iface);
-		return true;
-	}
-	
-	private void stopDhcp(String iface) {
-		NetworkUtils.stopDhcp(mIface);
-	}*/
+    public void interfaceLinkStateChanged(String iface, boolean up) {
+        Log.d(TAG, "interfaceLinkStateChanged: iface = " + iface + ", up = " + up);
+        if (!mIface.equals(iface))
+            return;
+        if (mLinkUp == up)
+            return;
+
+        mLinkUp = up;
+        if (up) {
+            mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(EVENT_INTERFACE_LINK_STATE_CHANGED, 1, 0),
+                            EVENT_INTERFACE_LINK_STATE_CHANGED_DELAY_MS);
+        } else {
+            mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(EVENT_INTERFACE_LINK_STATE_CHANGED, 0, 0),
+                            0);            
+        }
+    }
 	
 	/* For Android 7.x */
-	private boolean startDhcp(String iface) {
-		Log.d(TAG, "IpClient.startProvisioning");
+    private boolean startDhcp(String iface) {
+        Log.d(TAG, "IpClient.startProvisioning");
 		
-		if (mIpClient != null) {
-			mIpClient.shutdown();
-			mIpClient = null;
-		}
+        if (mIpClient != null) {
+            mIpClient.shutdown();
+            mIpClient = null;
+        }
 
-		Callback ipmCallback = new Callback() {
-            @Override
-            public void onProvisioningSuccess(LinkProperties newLp) {
-                Log.d(TAG, "onProvisioningSuccess: lp = " + newLp);
-                mLinkProperties = newLp;
-            }
+        Callback ipmCallback = new Callback() {
+        @Override
+        public void onProvisioningSuccess(LinkProperties newLp) {
+            Log.d(TAG, "onProvisioningSuccess: lp = " + newLp);
+            mLinkProperties = newLp;
+        }
 
-            @Override
-            public void onProvisioningFailure(LinkProperties newLp) {
-                Log.d(TAG, "onProvisioningFailure: lp = " + newLp);
-            }
+        @Override
+        public void onProvisioningFailure(LinkProperties newLp) {
+            mLinkProperties = newLp;
+        }
             
-			@Override
-			public void onLinkPropertiesChange(LinkProperties newLp) {
-				Log.d(TAG, "onLinkPropertiesChange: lp = " + newLp);
-			}
-		};
-	
-		mIpClient = new IpClient(mContext, iface, ipmCallback);
-		final IpClient.ProvisioningConfiguration config =
-			mIpClient.buildProvisioningConfiguration()
-                      .withoutIPv6()
-                      .withoutIpReachabilityMonitor()
-                      .withProvisioningTimeoutMs(36 * 1000)
-                      .build();
-		mIpClient.startProvisioning(config);
-		return true;
-	}
-	
-	private void stopDhcp(String iface) {
-		if (mIpClient != null) {
-			mIpClient.shutdown();
-			mIpClient = null;
-		}
-	}
-	
-        private void setStaticIpConfiguration(){
-                
-                mStaticIpConfiguration =new StaticIpConfiguration();
-                
-                String mIpAddress = "192.168.1.100";
-                int mNetmask = 24;
-                String mGateway = "192.168.1.1";
-                String mDns1 = "192.168.1.1";
-                String mDns2 = "8.8.8.8";
-                
-                String mProStaticInfo = SystemProperties.get("persist.net.eth1.staticinfo", null);
-                if(!TextUtils.isEmpty(mProStaticInfo)){
-                        String mStaticInfo[] = mProStaticInfo.split(",");
-                        mIpAddress = mStaticInfo[0];
-                        mNetmask =  Integer.parseInt(mStaticInfo[1]);
-                        if(!TextUtils.isEmpty(mStaticInfo[2]) && !TextUtils.isEmpty(mStaticInfo[3])) {
-                                mGateway = mStaticInfo[2];
-                                mDns1 = mStaticInfo[3];
-                        }
-                        if(!TextUtils.isEmpty(mStaticInfo[4]))
-                                mDns2 = mStaticInfo[4];
-                }
-
-                Inet4Address inetAddr = getIPv4Address(mIpAddress);
-                int prefixLength = mNetmask;
-                InetAddress gatewayAddr =getIPv4Address(mGateway); 
-                InetAddress dnsAddr = getIPv4Address(mDns1);
-                
-                mStaticIpConfiguration.ipAddress = new LinkAddress(inetAddr, prefixLength);
-                
-               // eth1 used in LAN, not need gateway dns
-                mStaticIpConfiguration.gateway=gatewayAddr;
-                mStaticIpConfiguration.dnsServers.add(dnsAddr);
-                mStaticIpConfiguration.dnsServers.add(getIPv4Address(mDns2));
+        @Override
+        public void onLinkPropertiesChange(LinkProperties newLp) {
+            mLinkProperties = newLp;
         }
 
-        private boolean setStaticIpAddress(StaticIpConfiguration staticConfig) {
-                if (DBG) Log.d(TAG, "setStaticIpAddress:" + staticConfig);
-                if (staticConfig.ipAddress != null ) {
-                        try {
-                                Log.i(TAG, "Applying static IPv4 configuration to " + mIface + ": " + staticConfig);
-                                InterfaceConfiguration config = mNMService.getInterfaceConfig(mIface);
-                                config.setLinkAddress(staticConfig.ipAddress);
-                                mNMService.setInterfaceConfig(mIface, config);
-                                return true;
-                        } catch(RemoteException|IllegalStateException e) {
-                                Log.e(TAG, "Setting static IP address failed: " + e.getMessage());
-                        }
-                } else {
-                        Log.e(TAG, "Invalid static IP configuration.");
-                }
-                return false;
-        }
+    };
 	
-        private void startDhcpServer() {
-                if (DBG) Log.d(TAG, "startDhcpServer");
-                String startIp = SystemProperties.get("persist.dhcpserver.start", "192.168.1.150");
-                String endIp = SystemProperties.get("persist.dhcpserver.end", "192.168.1.250");
-                String[] dhcpRange = {startIp, endIp};
-                try {
-                        mNMService.tetherInterface(mIface);
-                        mNMService.startTethering(dhcpRange);
-                } catch (Exception e) {
-                        Log.e(TAG, "Error tether interface " + mIface + ": " + e);
-                }              
-        }
-        
-        private void stopDhcpServer() {
-                if (DBG) Log.d(TAG, "stopDhcpServer");
-                try {
-                        mNMService.stopTethering();
-                } catch (Exception e) {
-                        Log.e(TAG, "Error tether stop interface " + mIface + ": " + e);
-                }
-                        
-        }
-        
-	private void connect() {
-		Thread connectThread = new Thread(new Runnable() {
-			public void run() {
-				if (mConnectState == 1) {
-					Log.d(TAG, "already connected, skip");
-					return;
-				}
-                                mConnectState = 2;
-				mMode = SystemProperties.get("persist.net.eth1.mode", "0");
-				if (mMode.equals("0")) { // DHCP
-					if (!startDhcp(mIface)) {
-						Log.e(TAG, "startDhcp failed for " + mIface);
-						mConnectState = 0;
-						return;
-					}
-					Log.d(TAG, "startDhcp success for " + mIface);					
-				} else { // Static
-                                        setStaticIpConfiguration();
-                                        if (!setStaticIpAddress(mStaticIpConfiguration)) {
-                                                // We've already logged an error.
-                                                if (DBG) Log.i(TAG, "setStaticIpAddress error,set again");
-                                                try {
-                                                        Thread.sleep(200);    
-                                                } catch (InterruptedException e) {
-                                                        e.printStackTrace();
-                                                } 
-                                                if (!setStaticIpAddress(mStaticIpConfiguration)) {
-                                                        mConnectState = 0;
-                                                        return;
-                                                }
-                                        }
-                                        mLinkProperties = mStaticIpConfiguration.toLinkProperties(mIface);
-                                        
-                                        //add dhcpserver
-                                        if (SystemProperties.get("persist.dhcpserver.enable", "0").equals("1")) {
-                                                startDhcpServer();
-                                        }
-				}
-                                /*add static route
-                                String gw = getGateway();
-                                mLinkProperties.addRoute(new RouteInfo(new LinkAddress(NetworkUtils.numericToInetAddress("10.80.71.0"), 24), NetworkUtils.numericToInetAddress(gw)));*/
-
-                                // addInterfaceToLocalNetwork
-                                if (mLinkProperties != null) {
-				    Log.d(TAG, "[BPI] start route iface " + mIface);
-                                    List<RouteInfo> routes = mLinkProperties.getRoutes();
-                                    addToLocalNetwork(mIface, routes);
-                                }
-                                mConnectState = 1;
-			}
-		});
-		connectThread.start();
-	}
-	
-	private void disconnect() {
-		Thread disconnectThread = new Thread(new Runnable() {
-			public void run() {
-				if (mConnectState == 0) {
-					Log.d(TAG, "already disconnected, skip");
-					return;
-				}
-				mMode = SystemProperties.get("persist.net.eth1.mode", "0");
-				if (mMode.equals("0")) { // DHCP
-					stopDhcp(mIface);
-				} else {
-                                        if (SystemProperties.get("persist.dhcpserver.enable", "0").equals("1")) {
-                                                stopDhcpServer();
-                                        }
-                                }
-				try {
-					mNMService.clearInterfaceAddresses(mIface);
-				} catch (Exception e) {
-					Log.e(TAG, "Failed to clear addresses " + e);
-				}
-				mConnectState = 0;
-			}
-		});
-		disconnectThread.start();
-	}	
-	
-	public void interfaceAdded(String iface) {
-		Log.d(TAG, "interfaceAdded: iface = " + iface);
-		if (!mIface.equals(iface))
-			return;
-		setInterfaceUp(mIface);
-		mLinkUp = false;
-	}
-	
-	public void interfaceRemoved(String iface) {
-		Log.d(TAG, "interfaceRemoved: iface = " + iface);
-		if (!mIface.equals(iface))
-			return;
-		mLinkUp = false;
-		mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
-		disconnect();
-	}
-        
-        private Inet4Address getIPv4Address(String text) {
-                try {
-                        return (Inet4Address) NetworkUtils.numericToInetAddress(text);
-                } catch (IllegalArgumentException|ClassCastException e) {
-                        return null;
-                }
-        }
-        
-         public String getGateway() {
-                for (RouteInfo route : mLinkProperties.getRoutes()) {
-                        if (route.hasGateway()) {
-                                InetAddress gateway = route.getGateway();
-                                if (route.isIPv4Default()) {
-                                        return gateway.getHostAddress();
-                                }
-                        }
-                }
-                return "";		
+    mIpClient = new IpClient(mContext, iface, ipmCallback);
+    final IpClient.ProvisioningConfiguration config =
+        mIpClient.buildProvisioningConfiguration()
+                .withoutIPv6()
+                .withoutIpReachabilityMonitor()
+                .withProvisioningTimeoutMs(36 * 1000)
+                .build();
+        mIpClient.startProvisioning(config);
+        return true;
     }
-        
+
+    private void stopDhcp(String iface) {
+        if (mIpClient != null) {
+            mIpClient.shutdown();
+            mIpClient = null;
+        }
+    }
+
+    private void setStaticIpConfiguration(){
+        mStaticIpConfiguration =new StaticIpConfiguration();
+        String mIpAddress = "172.16.110.10";
+        int mNetmask = 16;
+        String mGateway = "172.16.110.1";
+        String mDns1 = "192.168.1.1";
+        String mDns2 = "8.8.8.8";
+
+        String mProStaticInfo = SystemProperties.get("persist.net.eth1.staticinfo", null);
+        if(!TextUtils.isEmpty(mProStaticInfo)){
+            String mStaticInfo[] = mProStaticInfo.split(",");
+            mIpAddress = mStaticInfo[0];
+            mNetmask =  Integer.parseInt(mStaticInfo[1]);
+/*          if(!TextUtils.isEmpty(mStaticInfo[2]) && !TextUtils.isEmpty(mStaticInfo[3])) {
+                mGateway = mStaticInfo[2];
+                mDns1 = mStaticInfo[3];
+            }
+            if(!TextUtils.isEmpty(mStaticInfo[4]))
+                mDns2 = mStaticInfo[4];
+*/      }
+
+        Inet4Address inetAddr = getIPv4Address(mIpAddress);
+        int prefixLength = mNetmask;
+//      InetAddress gatewayAddr =getIPv4Address(mGateway); 
+//      InetAddress dnsAddr = getIPv4Address(mDns1);
+
+        mStaticIpConfiguration.ipAddress = new LinkAddress(inetAddr, prefixLength);
+        // eth1 used in LAN, not need gateway dns
+/*
+        mStaticIpConfiguration.gateway=gatewayAddr;
+        mStaticIpConfiguration.dnsServers.add(dnsAddr);
+        mStaticIpConfiguration.dnsServers.add(getIPv4Address(mDns2));
+*/
+    }
+
+    private boolean setStaticIpAddress(StaticIpConfiguration staticConfig) {
+        if (DBG) Log.d(TAG, "setStaticIpAddress:" + staticConfig);
+        if (staticConfig.ipAddress != null ) {
+            try {
+                Log.i(TAG, "Applying static IPv4 configuration to " + mIface + ": " + staticConfig);
+                InterfaceConfiguration config = mNMService.getInterfaceConfig(mIface);
+                config.setLinkAddress(staticConfig.ipAddress);
+                mNMService.setInterfaceConfig(mIface, config);
+                return true;
+            } catch(RemoteException|IllegalStateException e) {
+                Log.e(TAG, "Setting static IP address failed: " + e.getMessage());
+            }
+        } else {
+            Log.e(TAG, "Invalid static IP configuration.");
+        }
+            return false;
+    }
+
+    private void startDhcpServer() {
+        if (DBG) Log.d(TAG, "startDhcpServer");
+        String startIp = SystemProperties.get("persist.dhcpserver.start", "192.168.1.150");
+        String endIp = SystemProperties.get("persist.dhcpserver.end", "192.168.1.250");
+        String[] dhcpRange = {startIp, endIp};
+        try {
+            mNMService.tetherInterface(mIface);
+            mNMService.startTethering(dhcpRange);
+        } catch (Exception e) {
+            Log.e(TAG, "Error tether interface " + mIface + ": " + e);
+        }          
+    }
+
+    private void stopDhcpServer() {
+        if (DBG) Log.d(TAG, "stopDhcpServer");
+        try {
+            mNMService.stopTethering();
+        } catch (Exception e) {
+            Log.e(TAG, "Error tether stop interface " + mIface + ": " + e);
+        }
+            
+    }
+
+    private void connect() {
+    Thread connectThread = new Thread(new Runnable() {
+        public void run() {
+            if (mConnectState == 1) {
+                Log.d(TAG, "already connected, skip");
+                return;
+            }
+            mConnectState = 2;
+            mMode = SystemProperties.get("persist.net.eth1.mode", "1");
+            if (mMode.equals("0")) { // DHCP
+                Log.d(TAG, "start dhcp configuration for " + mIface);
+                if (!startDhcp(mIface)) {
+                    Log.e(TAG, "startDhcp failed for " + mIface);
+                    mConnectState = 0;
+                    return;
+                }
+                Log.d(TAG, "startDhcp success for " + mIface);
+            } else { // Static
+                Log.d(TAG, "start static configuration for " + mIface);
+                setStaticIpConfiguration();
+                if (!setStaticIpAddress(mStaticIpConfiguration)) {
+                    // We've already logged an error.
+                    if (DBG) Log.i(TAG, "setStaticIpAddress error,set again");
+                    try {
+                        Thread.sleep(200);    
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (!setStaticIpAddress(mStaticIpConfiguration)) {
+                        mConnectState = 0;
+                        return;
+                    }
+                }
+                mLinkProperties = mStaticIpConfiguration.toLinkProperties(mIface);
+
+                //add dhcpserver
+                if (SystemProperties.get("persist.dhcpserver.enable", "0").equals("1")) {
+                    startDhcpServer();
+                }
+            }
+            mConnectState = 1;
+        }
+    });
+    connectThread.start();
+    }
+
+    private void disconnect() {
+        Thread disconnectThread = new Thread(new Runnable() {
+            public void run() {
+            if (mConnectState == 0) {
+                Log.d(TAG, "already disconnected, skip");
+                return;
+            }
+            mMode = SystemProperties.get("persist.net.eth1.mode", "0");
+            if (mMode.equals("0")) { // DHCP
+                stopDhcp(mIface);
+            } else {
+                if (SystemProperties.get("persist.dhcpserver.enable", "0").equals("1")) {
+                    stopDhcpServer();
+                }
+            }
+            try {
+                mNMService.clearInterfaceAddresses(mIface);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to clear addresses " + e);
+            }
+            removeToLocalNetwork(mIface);
+            mLinkProperties = null;
+            mConnectState = 0;
+        }
+    });
+    disconnectThread.start();
+    }    
+
+    public void interfaceAdded(String iface) {
+        Log.d(TAG, "interfaceAdded: iface = " + iface);
+        if (!mIface.equals(iface))
+            return;
+        setInterfaceUp(mIface);
+        mLinkUp = false;
+    }
+
+    public void interfaceRemoved(String iface) {
+        Log.d(TAG, "interfaceRemoved: iface = " + iface);
+        if (!mIface.equals(iface))
+            return;
+        mLinkUp = false;
+        mHandler.removeMessages(EVENT_INTERFACE_LINK_STATE_CHANGED);
+        disconnect();
+    }
+
+    private Inet4Address getIPv4Address(String text) {
+        try {
+            return (Inet4Address) NetworkUtils.numericToInetAddress(text);
+        } catch (IllegalArgumentException|ClassCastException e) {
+            return null;
+        }
+    }
+
+     public String getGateway() {
+        for (RouteInfo route : mLinkProperties.getRoutes()) {
+            if (route.hasGateway()) {
+                InetAddress gateway = route.getGateway();
+                if (route.isIPv4Default()) {
+                    return gateway.getHostAddress();
+                }
+            }
+        }
+        return "";
+    }
+
 }
