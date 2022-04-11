@@ -784,9 +784,9 @@
 		};
 	};
 	cooling-maps {
-		/*cpucore_cooling_map {
+		cpucore_cooling_map0 {
 			trip = <&phot>;
-		};*/
+		};
 		fan_cooling_map0 {
 			trip = <&fan_0>;
 			cooling-device = <&pwmfan 0 1>;
@@ -865,14 +865,14 @@
 &i2c2 {
 	status = "disabled";
 	pinctrl-names="default";
-	pinctrl-0=<&i2c2_master_pins2>;
+	pinctrl-0=<&i2c2_master_pins1>; /* GPIOx_17,GPIOX_18 */
 	clock-frequency = <100000>; /* default 100k */
 };
 
 &i2c3 {
 	status = "disabled";
 	pinctrl-names="default";
-	pinctrl-0=<&i2c3_master_pins2>;
+	pinctrl-0=<&i2c3_master_pins2>; /* GPIOA_14,GPIOA_15 */
 	clock-frequency = <100000>; /* default 100k */
 };
 
@@ -1256,12 +1256,20 @@
 };
 
 &pcie_A {
-	reset-gpio = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
+	reset-gpio = <&gpio GPIOA_8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
 &saradc {
 	status = "okay";
+};
+
+&spicc0 {
+        status = "disabled";
+        pinctrl-names = "default";
+        pinctrl-0 = <&spicc0_pins_x>;
+        num_chipselect = <1>;
+        cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
 };
 
 &remote {
