@@ -51,6 +51,7 @@
         android:theme="@style/Theme.Settings"
         android:usesCleartextTraffic="true"
         android:defaultToDeviceProtectedStorage="true"
+	android:persistent="true"
         android:directBootAware="true">
 
         <activity
@@ -641,8 +642,7 @@
         </activity>
 
         <!-- Triggered when user-selected home app isn't encryption aware -->
-        <!-- bpi, disable FallbackHome when com.android.settings exist
-	<activity android:name=".system.FallbackHome"
+        <activity android:name=".system.FallbackHome"
                   android:excludeFromRecents="true"
                   android:theme="@style/FallbackHome"
                   android:configChanges="locale|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection" >
@@ -652,7 +652,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-	-->
 
         <activity android:name=".inputmethod.InputMethodAndSubtypeEnablerActivity"
                   android:label=""
