@@ -200,6 +200,7 @@ static const char* DV_MODE_TYPE[] = {
     "LL_RGB_444_10BIT"
 };
 
+
 /**
  * strstr - Find the first substring in a %NUL terminated string
  * @s1: The string to be searched
@@ -255,6 +256,13 @@ static void copy_changed_values(
     //if ((int32_t) set->sync > 0)  base->sync = set->sync;
     //if ((int32_t) set->vmode > 0) base->vmode = set->vmode;
     copy_if_gt0(&set->pixclock, &base->pixclock, 9);
+}
+
+int DisplayMode::isLcdExist() {
+    char value[PROPERTY_VALUE_MAX];
+    property_get("ro.boot.lcd_exist", value, "0");
+    int32_t exist = atoi(value);
+    return exist;
 }
 
 DisplayMode::DisplayMode(const char *path, Ubootenv *ubootenv)
@@ -321,12 +329,12 @@ void DisplayMode::init() {
         setTvRecoveryDisplay();
 #endif
     } else if (DISPLAY_TYPE_TABLET == mDisplayType) {
-        #ifdef HWC_DYNAMIC_SWITCH_VIU
-        pTxAuth = new HDCPTxAuth();
-        pTxAuth->setUevntCallback(this);
-        pTxAuth->setFRAutoAdpt(new FrameRateAutoAdaption(this));
-        dumpCaps();
-        #endif
+        if (isLcdExist() == 1) {
+            pTxAuth = new HDCPTxAuth();
+            pTxAuth->setUevntCallback(this);
+            pTxAuth->setFRAutoAdpt(new FrameRateAutoAdaption(this));
+            dumpCaps();
+		}
     } else if (DISPLAY_TYPE_REPEATER == mDisplayType) {
         pTxAuth = new HDCPTxAuth();
         pTxAuth->setUevntCallback(this);
@@ -445,6 +453,8 @@ int DisplayMode::parseConfigFile(){
                     SYS_LOGE("%s: Expected keyword, got '%s'.", tokenizer->getLocation(), token);
                     break;
                 }
+                if (isLcdExist() == 0)
+                    mDisplayType = DISPLAY_TYPE_MBOX;
             }
 
             tokenizer->nextLine();
@@ -661,28 +671,26 @@ void DisplayMode::setSourceOutputMode(const char* outputmode, output_mode_state 
 
     if (strstr(mRebootMode, "quiescent") && (strstr(outputmode, MODE_PANEL) == NULL)) {
         SYS_LOGI("reboot_mode is quiescent\n");
-        #ifndef HWC_DYNAMIC_SWITCH_VIU
-        pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-        #endif
+	    if (isLcdExist() == 0)
+            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
         return;
     }
     SYS_LOGI("curMode = %s outputmode = %s",curMode,outputmode);
     if (strstr(curMode, outputmode) == NULL) {
         if (cvbsMode && (strstr(outputmode, MODE_PANEL) == NULL)) {
-            #ifndef HWC_DYNAMIC_SWITCH_VIU
-            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-            #endif
+            if (isLcdExist() == 0)
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
         }
-        #ifdef HWC_DYNAMIC_SWITCH_VIU
-        if (DISPLAY_TYPE_TABLET == mDisplayType &&
-            !strcmp("panel", curDisplayMode)) {
-            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE2, outputmode);
+		if (isLcdExist() == 1) {
+            if (DISPLAY_TYPE_TABLET == mDisplayType &&
+                !strcmp("panel", curDisplayMode)) {
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE2, outputmode);
+            } else {
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, outputmode);
+            }
         } else {
             pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, outputmode);
         }
-        #else
-        pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, outputmode);
-        #endif
         /* phy already turned on after write display/mode node */
         phy_enabled_already = true;
     } else {
@@ -1322,16 +1330,14 @@ void DisplayMode::setAutoSwitchFrameRate(int state) {
 #ifdef DEFAULT_NO_CLK_OFFSET
     if ((state == OUPUT_MODE_STATE_SWITCH_ADAPTER) || pFrameRateAutoAdaption->autoSwitchFlag == true) {
         SYS_LOGI("FrameRate video need set mode to null, and policy to 1 to into adapter policy\n");
-        #ifndef HWC_DYNAMIC_SWITCH_VIU
-        pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-        #endif
+        if (isLcdExist() == 0)
+            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
         pSysWrite->writeSysfs(HDMI_TX_FRAMRATE_POLICY, "1");
     } else {
         if (state == OUPUT_MODE_STATE_ADAPTER_END) {
             SYS_LOGI("End Hint FrameRate video need set mode to null to exit adapter policy\n");
-            #ifndef HWC_DYNAMIC_SWITCH_VIU
-            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-            #endif
+            if (isLcdExist() == 0)
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
         }
         pSysWrite->writeSysfs(HDMI_TX_FRAMRATE_POLICY, "0");
     }
@@ -1398,9 +1404,8 @@ void DisplayMode::updateDeepColor(bool cvbsMode, output_mode_state state, const 
         pSysWrite->readSysfs(DISPLAY_HDMI_COLOR_ATTR, attr);
         if (strstr(attr, colorAttribute) == NULL) {
             SYS_LOGI("set DeepcolorAttr value is different from attr sysfs value\n");
-            #ifndef HWC_DYNAMIC_SWITCH_VIU
-            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-            #endif
+            if (isLcdExist() == 0)
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
             pSysWrite->writeSysfs(DISPLAY_HDMI_COLOR_ATTR, colorAttribute);
         } else {
             SYS_LOGI("cur deepcolor attr value is equals to colorAttribute, Do not need set it\n");
@@ -1853,9 +1858,8 @@ void DisplayMode::setDolbyVisionEnable(int state,  output_mode_state mode_state)
                 getBootEnv(UBOOTENV_COLORATTRIBUTE, saveAttr);
                 pSysWrite->readSysfs(DISPLAY_HDMI_COLOR_ATTR, attr);
                 if (strstr(attr, saveAttr) == NULL) {
-                    #ifndef HWC_DYNAMIC_SWITCH_VIU
-                    pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-                    #endif
+                    if (isLcdExist() == 0)
+                        pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
                 }
 
                 if ((pSysWrite->getPropertyBoolean(PROP_DOLBY_VISION_CERTIFICATION, false))
@@ -1945,9 +1949,8 @@ void DisplayMode::setDolbyVisionEnable(int state,  output_mode_state mode_state)
 
         char mode[MAX_STR_LEN] = {0};
         if (isTvSupportDolbyVision(mode)) {
-            #ifndef HWC_DYNAMIC_SWITCH_VIU
-            pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
-            #endif
+            if (isLcdExist() == 0)
+                pSysWrite->writeSysfs(SYSFS_DISPLAY_MODE, "null");
             setDolbyVisionState = false;
             setSourceOutputMode(outputmode);
             setDolbyVisionState = true;

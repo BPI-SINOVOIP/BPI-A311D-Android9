@@ -57,6 +57,14 @@ static bool runtime_caps_read = false;
 #define MALI_GRALLOC_GPU_LIBRARY_PATH2 "/system/lib/egl/"
 #endif
 
+int32_t isLcdExist()
+{
+    char value[PROPERTY_VALUE_MAX];
+    property_get("ro.boot.lcd_exist", value, "0");
+    int32_t exist = atoi(value);
+    return exist;
+}
+
 static bool get_block_capabilities(bool hal_module, const char *name, mali_gralloc_format_caps *block_caps)
 {
 	void *dso_handle = NULL;
@@ -961,14 +969,16 @@ uint64_t mali_gralloc_select_format(uint64_t req_format, mali_gralloc_format_typ
 	}
 	else if ((usage & GRALLOC_USAGE_HW_FB) == GRALLOC_USAGE_HW_FB)
 	{
+        if (isLcdExist() == 1) {
 #if PRIMARY_DISP_SUPPORT_AFBC == false
-		if ((usage & GRALLOC_USAGE_EXTERNAL_DISP) == 0)
-			producer_runtime_mask &= ~MALI_GRALLOC_FORMAT_CAPABILITY_AFBCENABLE_MASK;
+		    if ((usage & GRALLOC_USAGE_EXTERNAL_DISP) == 0)
+			    producer_runtime_mask &= ~MALI_GRALLOC_FORMAT_CAPABILITY_AFBCENABLE_MASK;
 #endif
 #if EXTEND_DISP_SUPPORT_AFBC == false
-		if ((usage & GRALLOC_USAGE_EXTERNAL_DISP) == GRALLOC_USAGE_EXTERNAL_DISP)
-			producer_runtime_mask &= ~MALI_GRALLOC_FORMAT_CAPABILITY_AFBCENABLE_MASK;
+		    if ((usage & GRALLOC_USAGE_EXTERNAL_DISP) == GRALLOC_USAGE_EXTERNAL_DISP)
+			    producer_runtime_mask &= ~MALI_GRALLOC_FORMAT_CAPABILITY_AFBCENABLE_MASK;
 #endif
+        }
 	}
 	else
 	{

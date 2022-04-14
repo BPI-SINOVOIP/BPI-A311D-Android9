@@ -535,6 +535,7 @@ public:
     DisplayMode(const char *path, Ubootenv *ubootenv);
     ~DisplayMode();
 
+    static int isLcdExist();
     void init();
     void reInit();
 

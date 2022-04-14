@@ -28,6 +28,7 @@ typedef enum {
 class HwcConfig {
 public:
     static uint32_t getDisplayNum();
+    static int32_t isLcdExist();
     static int32_t getFramebufferSize(int disp, uint32_t & width, uint32_t & height);
 
     static hwc_connector_t getConnectorType(int disp);
