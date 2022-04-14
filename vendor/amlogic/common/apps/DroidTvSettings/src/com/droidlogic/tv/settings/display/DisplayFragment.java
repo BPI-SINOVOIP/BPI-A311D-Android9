@@ -36,6 +36,7 @@ public class DisplayFragment extends LeanbackPreferenceFragment {
 	private static final String KEY_HDR = "hdr";
 	private static final String KEY_SDR = "sdr";
 	private static final String KEY_DOLBY_VISION    = "dolby_vision";
+	private static final String KEY_SCREEN_BRIGHTNESS = "screen_brightness";
 	private static final String KEY_SCREEN_ROTATION = "screen_rotation";
 
 	private boolean mTvUiMode;
@@ -58,10 +59,19 @@ public class DisplayFragment extends LeanbackPreferenceFragment {
 			&& (SystemProperties.getBoolean("tv.soc.as.mbox", false) == false);
 		final Preference outputmodePref = findPreference(KEY_OUTPUTMODE);
 		outputmodePref.setVisible(SettingsConstant.needScreenResolutionFeture(getContext()) && !tvFlag);
-
+		final Preference brightnessPref = findPreference(KEY_SCREEN_BRIGHTNESS);
 		final Preference rotationPref = findPreference(KEY_SCREEN_ROTATION);
 		final Preference screenPositionPref = findPreference(KEY_POSITION);
-		screenPositionPref.setVisible(!tvFlag);
+		String status = SystemProperties.get("ro.boot.lcd_exist", "0");
+		if (status.equals("1")) {
+			brightnessPref.setVisible(true);
+			screenPositionPref.setVisible(false);
+			outputmodePref.setVisible(false);
+		} else {
+			brightnessPref.setVisible(false);
+			screenPositionPref.setVisible(true);
+			screenPositionPref.setVisible(true);
+		}
 
 		final Preference sdrPref = findPreference(KEY_SDR);
 		sdrPref.setVisible((!SystemProperties.getBoolean("ro.vendor.platform.support.dolbyvision", false))

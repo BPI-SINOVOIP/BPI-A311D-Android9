@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <hardware/lights.h>
 #include <hardware/hardware.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Set to 1 to enable debug messages to the log */
 #define DEBUG 0

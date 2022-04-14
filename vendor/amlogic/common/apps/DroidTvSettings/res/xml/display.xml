@@ -26,6 +26,10 @@
             android:title="@string/device_position"
             android:fragment="com.droidlogic.tv.settings.display.position.DisplayPositionFragment"/>
         <Preference
+            android:key="screen_brightness"
+            android:title="@string/screen_brightness"
+            android:fragment="com.droidlogic.tv.settings.display.screen.BrightnessSeekBarFragment"/>
+        <Preference
             android:key="screen_rotation"
             android:title="@string/screen_rotation"
             android:fragment="com.droidlogic.tv.settings.display.screen.RotationFragment"/>

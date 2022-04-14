@@ -103,6 +103,11 @@
             android:exported="true"
             android:theme="@style/Theme.Settings.Transparent" />
         <activity
+            android:name=".display.screen.BrightnessActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:exported="true"
+            android:theme="@style/Theme.Settings.Transparent" />
+        <activity
             android:name=".display.screen.RotationActivity"
             android:configChanges="keyboard|keyboardHidden|navigation"
             android:exported="true"

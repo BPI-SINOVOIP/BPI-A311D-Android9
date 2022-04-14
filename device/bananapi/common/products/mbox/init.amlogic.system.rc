@@ -325,6 +325,9 @@ on boot
 
     chown media  system /sys/class/vfm/map
 
+    #backlight
+    chown system system /sys/class/backlight/aml-bl/brightness
+
     # Free scale
     chown system system /sys/class/graphics/fb0/free_scale
     chown system system /sys/class/graphics/fb0/scale_width

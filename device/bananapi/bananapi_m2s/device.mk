@@ -99,6 +99,10 @@ endif
 PRODUCT_TAGS += dalvik.gc.type-precise
 
 
+# Light HAL
+PRODUCT_PACKAGES += \
+    lights.amlogic
+
 # setup dalvik vm configs.
 $(call inherit-product, frameworks/native/build/tablet-10in-xhdpi-2048-dalvik-heap.mk)
 
