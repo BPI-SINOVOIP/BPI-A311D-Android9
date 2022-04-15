@@ -247,10 +247,14 @@
             "\0"\
         "boot_from_sdcard="\
             "echo BPI: try boot from sdcard;"\
+            "setenv devtype mmc;"\
+            "setenv devno 0;"\
             "if fatload mmc 0 ${loadaddr} ${boot_scripts}; then source ${loadaddr}; fi;"\
             "\0"\
         "boot_from_udisk="\
             "echo BPI: try boot from udisk;"\
+            "setenv devtype usb;"\
+            "setenv devno 0;"\
             "if fatload usb 0 ${loadaddr} ${boot_scripts}; then source ${loadaddr}; fi;"\
             "\0"\
         "recovery_from_sdcard="\
