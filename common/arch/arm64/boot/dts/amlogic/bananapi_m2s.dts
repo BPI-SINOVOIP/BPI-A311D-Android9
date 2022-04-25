@@ -186,9 +186,9 @@
 
 		remote_led {
 			label = "remote_led";
-			gpios = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio_ao GPIOAO_7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
-			linux,default-trigger = "rc_feedback";
+			linux,default-trigger = "default-on";
 		};
 
 		sys_led {
@@ -730,20 +730,20 @@
 
 	sensor: sensor {
 		compatible = "soc, sensor";
-		status = "okay";
+		status = "disabled";
 		sensor-name = "imx481"; /*imx290;os08a10;imx227*/
 		pinctrl-names="default";
 		pinctrl-0=<&gen_clk_ee_ao>;
 		clocks = <&clkc CLKID_GEN_CLK>;
 		clock-names = "gen_clk";
 		power-enable = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
-		reset = <&gpio GPIOA_14 GPIO_ACTIVE_HIGH>;
+		reset = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
 		pwdn = <&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
 	};
 
 	iq: iq {
 		compatible = "soc, iq";
-		status = "okay";
+		status = "disabled";
 		sensor-name = "imx481"; /*imx290;os08a10;imx227*/
 	};
 
@@ -803,7 +803,7 @@
 };
 
 &isp {
-	status = "okay";
+	status = "disabled";
 	temper-line-offset = <0x1E00>;
 	temper-buf-size = <32>;
 	temper-frame-num = <1>;
@@ -812,7 +812,7 @@
 };
 
 &adapter {
-	status = "okay";
+	status = "disabled";
 	mem_alloc = <24>;
 	memory-region = <&adapt_cma_reserved>;
 };
@@ -838,15 +838,8 @@
 	status = "okay";
 };
 
-&i2c0 {
-	status = "disabled";
-	pinctrl-names = "default";
-	pinctrl-0 = <&i2c0_master_pins2>;
-	clock-frequency = <400000>;
-};
-
 &i2c1 {
-	status = "okay";
+	status = "disabled";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_master_pins3>; /* GPIOH_6,GPIOH_7 */
 	clock-frequency = <400000>;
@@ -1092,11 +1085,11 @@
 	};
 	
 	pdmin: pdmin {
-		mux { /* gpioa_5, gpioa_6, gpioa_7, gpioa_8, gpioa_9*/
+		mux { /* GPIOX_0, GPIOX_1, GPIOX_2, GPIOX_3, GPIOX_4*/
 			groups = "pdm_din0_x",
-			/*"pdm_din1_x",*/
+			"pdm_din1_x",
 			"pdm_din2_x",
-			/*"pdm_din3_x",*/
+			"pdm_din3_x",
 			"pdm_dclk_x";
 			function = "pdm";
 		};
