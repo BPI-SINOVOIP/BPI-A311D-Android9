@@ -15,8 +15,6 @@
 #
 
 PRODUCT_COPY_FILES += \
-    device/bananapi/$(PRODUCT_DIR)/root/sud:$(TARGET_OUT_OPTIONAL_EXECUTABLES)/system/xbin/su \
-    device/bananapi/$(PRODUCT_DIR)/root/sud:$(TARGET_OUT_OPTIONAL_EXECUTABLES)/system/xbin/sud \
     device/bananapi/common/products/mbox/init.amlogic.system.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.amlogic.rc \
     device/bananapi/$(PRODUCT_DIR)/init.amlogic.usb.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.amlogic.usb.rc \
     device/bananapi/$(PRODUCT_DIR)/init.amlogic.board.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.amlogic.board.rc
