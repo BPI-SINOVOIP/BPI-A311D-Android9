@@ -689,8 +689,8 @@ void get_hw_revision(void)
 		printf("BPI hw revision: bananapi_m2s_v1\n");
 
 		/* set env for linux image dtb load */
-		setenv("variant", "bananapi_m2s");
-		setenv("board", "bpi-m2s");
+		setenv("board", "bananapi_m2s");
+		setenv("fdtfile", "bananapi_m2s.dtb");
 	}
 }
 
