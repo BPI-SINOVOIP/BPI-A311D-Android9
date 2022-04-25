@@ -298,7 +298,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # 0-dhcp, 1-static
 PRODUCT_PROPERTY_OVERRIDES += \
-        persist.net.eth1.mode=1 \
+        persist.net.eth1.mode=0 \
         persist.net.eth1.staticinfo=172.16.1.1,24,172.16.1.1,114.114.114.114,8.8.8.8 \
         persist.dhcpserver.enable=1 \
         persist.dhcpserver.start=172.16.1.100 \
