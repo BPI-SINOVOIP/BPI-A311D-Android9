@@ -632,7 +632,7 @@ static sensor_context_t *sensor_global_parameter(void* sbp)
     udelay(30);
 #endif
 
-    ret = clk_am_enable(sensor_bp, "g12a_24m");
+    ret = clk_am_enable(sensor_bp, "gen_clk");
     if (ret < 0 )
         pr_err("set mclk fail\n");
 
@@ -734,11 +734,12 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void *sbp )
 
 int sensor_detect_ov08a10( void* sbp)
 {
+    pr_err("[BPI]sensor_detect_ov08a10\n");
     int ret = 0;
     sensor_ctx.sbp = sbp;
     sensor_bringup_t* sensor_bp = (sensor_bringup_t*) sbp;
 #if PLATFORM_G12B
-    ret = clk_am_enable(sensor_bp, "g12a_24m");
+    ret = clk_am_enable(sensor_bp, "gen_clk");
     if (ret < 0 )
         pr_err("set mclk fail\n");
 #elif PLATFORM_C308X

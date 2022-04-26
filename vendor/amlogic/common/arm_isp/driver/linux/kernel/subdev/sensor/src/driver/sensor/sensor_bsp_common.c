@@ -162,9 +162,10 @@ int clk_am_enable(sensor_bringup_t* sensor_bp, const char* propname)
         return -1;
     }
 
+    clk_set_rate(clk, 24000000);
     clk_prepare_enable(clk);
     clk_val = clk_get_rate(clk);
-    pr_info("init mclock is %d MHZ\n",clk_val/1000000);
+    pr_info("init clock is %d MHZ\n",clk_val/1000000);
 
     sensor_bp->mclk = clk;
     return 0;

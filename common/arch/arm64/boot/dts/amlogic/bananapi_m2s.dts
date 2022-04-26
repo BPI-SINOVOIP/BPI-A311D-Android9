@@ -164,14 +164,14 @@
 			compatible = "shared-dma-pool";
 			reusable;
 			status = "okay";
-			size = <0x0 0x8000000>;
+			size = <0x0 0x06800000>;
 			alignment = <0x0 0x400000>;
 		};
 		adapt_cma_reserved:linux,adapt_cma {
 			compatible = "shared-dma-pool";
 			reusable;
 			status = "okay";
-			size = <0x0 0x1800000>;
+			size = <0x0 0x01800000>;
 			alignment = <0x0 0x400000>;
 		};
 	};
@@ -730,21 +730,22 @@
 
 	sensor: sensor {
 		compatible = "soc, sensor";
-		status = "disabled";
-		sensor-name = "imx481"; /*imx290;os08a10;imx227*/
+		status = "okay";
+		sensor-name = "os08a10"; /*imx290;os08a10;imx227*/
 		pinctrl-names="default";
 		pinctrl-0=<&gen_clk_ee_ao>;
 		clocks = <&clkc CLKID_GEN_CLK>;
 		clock-names = "gen_clk";
-		power-enable = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
+		//power-enable = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
 		reset = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
-		pwdn = <&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
+		//pwdn = <&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
+		ir_cut_gpio = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
 	};
 
 	iq: iq {
 		compatible = "soc, iq";
-		status = "disabled";
-		sensor-name = "imx481"; /*imx290;os08a10;imx227*/
+		status = "okay";
+		sensor-name = "os08a10"; /*imx290;os08a10;imx227*/
 	};
 
 	pwmgpio:pwmgpio {
@@ -803,7 +804,7 @@
 };
 
 &isp {
-	status = "disabled";
+	status = "okay";
 	temper-line-offset = <0x1E00>;
 	temper-buf-size = <32>;
 	temper-frame-num = <1>;
@@ -812,7 +813,7 @@
 };
 
 &adapter {
-	status = "disabled";
+	status = "okay";
 	mem_alloc = <24>;
 	memory-region = <&adapt_cma_reserved>;
 };
@@ -839,7 +840,7 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_master_pins3>; /* GPIOH_6,GPIOH_7 */
 	clock-frequency = <400000>;
@@ -1125,7 +1126,7 @@
 /*if you want to use vdin just modify status to "ok"*/
 &vdin0 {
 	memory-region = <&vdin0_cma_reserved>;
-	status = "disabled";
+	status = "okay";
 	/*vdin write mem color depth support:
 	 *bit0:support 8bit
 	 *bit1:support 9bit
@@ -1138,7 +1139,7 @@
 
 &vdin1 {
 	memory-region = <&vdin1_cma_reserved>;
-	status = "disabled";
+	status = "okay";
 	/*vdin write mem color depth support:
 	 *bit0:support 8bit
 	 *bit1:support 9bit

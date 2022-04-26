@@ -85,13 +85,13 @@ int dram_init(void)
 	return 0;
 }
 
-int enableLcdVcc(void)
+int enableCameraVcc(void)
 {
-	/* set gpioa_9 high to enable lcd vcc*/
-	writel(readl(PREG_PAD_GPIO5_EN_N) | (1 << 9), PREG_PAD_GPIO5_EN_N);
-	writel(readl(PREG_PAD_GPIO5_O) | (1 << 9), PREG_PAD_GPIO5_O);
-	writel(readl(PERIPHS_PIN_MUX_E) & (~(0xf << 4)), PERIPHS_PIN_MUX_E);
-	return 0;
+    /* set gpioa_13 high to enable lcd vcc*/
+    writel(readl(PREG_PAD_GPIO5_EN_N) & (~(1 << 13)), PREG_PAD_GPIO5_EN_N);
+    writel(readl(PREG_PAD_GPIO5_O) | (1 << 13), PREG_PAD_GPIO5_O);
+    writel(readl(PERIPHS_PIN_MUX_E) & (~(0xf << 20)), PERIPHS_PIN_MUX_E);
+    return 0;
 }
 
 /* secondary_boot_func
@@ -780,8 +780,8 @@ int board_late_init(void)
 	lcd_probe();
 #endif
 
-	//enable Lcd VCC
-	enableLcdVcc();
+	//enable camera power
+	enableCameraVcc();
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
