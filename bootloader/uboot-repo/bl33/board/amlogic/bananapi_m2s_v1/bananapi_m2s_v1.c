@@ -687,10 +687,7 @@ void get_hw_revision(void)
 	val = get_adc_value(BOARD_REV_CHANNEL);
 	if (IS_RANGE(val, 900, 1100)) {     /* avg : 90 */
 		printf("BPI hw revision: bananapi_m2s_v1\n");
-
-		/* set env for linux image dtb load */
 		setenv("board", "bananapi_m2s");
-		setenv("fdtfile", "bananapi_m2s.dtb");
 	}
 }
 
@@ -845,9 +842,11 @@ int checkhw(char * name)
 		switch (cpu_id.package_id) {
 			case MESON_CPU_PACKAGE_ID_922X:
 				strcpy(loc_name, "bananapi_m2s_922x\0");
+				setenv("fdtfile", "bananapi_m2s_922x.dtb");
 				break;
 			case MESON_CPU_PACKAGE_ID_A311D:
 				strcpy(loc_name, "bananapi_m2s_a311d\0");
+				setenv("fdtfile", "bananapi_m2s.dtb");
 				break;
 			default:
 				strcpy(loc_name, "unsupport");
