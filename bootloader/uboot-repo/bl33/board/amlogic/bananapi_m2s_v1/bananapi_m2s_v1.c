@@ -830,38 +830,24 @@ phys_size_t get_effective_memsize(void)
 int checkhw(char * name)
 {
 	/*
-         * set aml_dt according to chip and dram capacity
-         */
-	unsigned int ddr_size=0;
-	int i;
-
-	/*
 	 * use rev id to identify revA/revB
 	 */
 	cpu_id_t cpu_id;
 	cpu_id = get_cpu_id();
 	char loc_name[64] = {0};
 
+	printf("cpu_id.family_id: %x\n", cpu_id.family_id);
+	printf("cpu_id.package_id: %x\n", cpu_id.package_id);
 	printf("cpu_id.chip_rev: %x\n", cpu_id.chip_rev);
+	printf("cpu_id.layout_ver: %x\n", cpu_id.layout_ver);
 
-	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
-		ddr_size += gd->bd->bi_dram[i].size;
-	}
-
-
-#if defined(CONFIG_SYS_MEM_TOP_HIDE)
-	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
-#endif
-
-	printf("checkhw: ddr_size=%x\n", ddr_size);
-
-	if (cpu_id.chip_rev == 0xB) {
-		switch (ddr_size) {
-			case 0xE0000000:
-				strcpy(loc_name, "bananapi_m2s_4g\0");
+	if (cpu_id.chip_rev == MESON_CPU_CHIP_REVISION_B) {
+		switch (cpu_id.package_id) {
+			case MESON_CPU_PACKAGE_ID_922X:
+				strcpy(loc_name, "bananapi_m2s_922x\0");
 				break;
-			case 0x80000000:
-				strcpy(loc_name, "bananapi_m2s_2g\0");
+			case MESON_CPU_PACKAGE_ID_A311D:
+				strcpy(loc_name, "bananapi_m2s_a311d\0");
 				break;
 			default:
 				strcpy(loc_name, "unsupport");
@@ -869,7 +855,7 @@ int checkhw(char * name)
 		}
 	}
 	else {
-		printf("chip_rev is not revB(A311D)\n");
+		printf("chip_rev is not g12b revB\n");
 	}
 
 	printf("checkhw: loc_name is %s\n", loc_name);
