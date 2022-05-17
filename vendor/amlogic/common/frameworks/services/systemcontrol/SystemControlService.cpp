@@ -1077,11 +1077,15 @@ int SystemControlService::saveDisplayMode(int source_input, int mode)
 
 int SystemControlService::setBacklight(int value, int isSave)
 {
+#ifdef BPI
     if (pCPQControl != NULL) {
         return pCPQControl->SetBacklight(value, isSave);
     } else {
         return -1;
     }
+#else
+    return 0;
+#endif
 }
 
 int SystemControlService::getBacklight(void)
