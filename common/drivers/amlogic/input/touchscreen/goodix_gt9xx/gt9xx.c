@@ -399,7 +399,11 @@ if (1 == rotation) {
 	}else if (3 == rotation) {
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_X, ts->abs_x_max-x);
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, ts->abs_y_max-y);
-	}else{
+	}else if (4 == rotation) { /* bpi, 800x1280 panel */
+		GTP_SWAP(x, y);
+        input_report_abs(ts->input_dev, ABS_MT_POSITION_X, ts->abs_x_max-x);
+        input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
+    }else{
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_X, x);
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
 	}
@@ -425,7 +429,7 @@ if (1 == rotation) {
     input_mt_sync(ts->input_dev);
 #endif
 
-    GTP_DEBUG("ID:%d, X:%d, Y:%d, W:%d", id, x, y, w);
+    GTP_INFO("ID:%d, X:%d, Y:%d, W:%d", id, x, y, w);
 }
 
 /*******************************************************
@@ -1840,7 +1844,7 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
     input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
 #endif
 
-if (1 == rotation) {
+if (1 == rotation || 4 == rotation) {
     GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
 }
 
@@ -2329,7 +2333,7 @@ static void gtp_parse_dt(struct device *dev)
 
 	ret = of_property_read_u32(np, "rotation", &temp_val);
 	if (!ret) {
-		rotation = temp_val;		
+		rotation = temp_val;
 	} else {
 		rotation = 0;
 		GTP_ERROR("cannot get rotation value of touchscreen");

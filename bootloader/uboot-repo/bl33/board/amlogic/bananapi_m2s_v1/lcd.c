@@ -22,8 +22,8 @@
 #endif
 
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	"GPIOZ_9", /* panel rst */
-	"GPIOZ_8", /* panel power */
+	"GPIOA_6", /* panel rst */
+	"GPIOA_9", /* panel power */
 	"invalid", /* ending flag */
 };
 
@@ -54,8 +54,8 @@ static struct lcd_power_step_s lcd_power_off_step_P070ACB[] = {
 };
 
 static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	"GPIOH_4", /* BL_EN */
-	"GPIOH_5", /* BL_PWM */
+	"GPIOA_10", /* BL_EN */
+	"GPIOA_11", /* BL_PWM */
 	"invalid", /* ending flag */
 };
 

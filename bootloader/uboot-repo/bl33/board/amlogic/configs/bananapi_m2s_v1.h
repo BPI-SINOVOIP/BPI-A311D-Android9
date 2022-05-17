@@ -86,9 +86,9 @@
         "upgrade_step=0\0"\
         "jtag=disable\0"\
         "loadaddr=3080000\0"\
-        "panel_type=lcd_1\0" \
+        "panel_type=lcd_0\0" \
         "lcd_ctrl=0x00000000\0" \
-        "lcd_exist=0\0" \
+        "lcd_exist=1\0" \
         "outputmode=panel\0" \
         "hdmimode=1080p60hz\0" \
         "colorattribute=444,8bit\0"\
@@ -386,6 +386,7 @@
 /* buffer rotate for portrait screen */
 #define CONFIG_SINGLE_LOGO \
 	"setenv outputmode panel;setenv display_layer osd0;"\
+	"setenv fb_height 1280; setenv fb_width 800;"\
 	"vout output panel;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
 	"\0"\
 

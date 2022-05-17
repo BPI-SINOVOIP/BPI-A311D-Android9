@@ -19,7 +19,6 @@
 
 #include "partition_mbox_normal_P_32.dtsi"
 #include "mesong12b.dtsi"
-#include "bananapi_panel.dtsi"
 
 / {
 	model = "Amlogic";

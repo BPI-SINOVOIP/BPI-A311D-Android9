@@ -817,6 +817,11 @@ int lcd_probe(void)
 	int ret = 0;
 
 	lcd_debug_print_flag = getenv_ulong("lcd_debug_print", 10, 0);
+	if(!lcd_debug_print_flag) {
+#ifdef LCD_DEBUG_INFO
+		lcd_debug_print_flag = 1;
+#endif
+	}
 	LCDPR("lcd_debug_print flag: %d\n", lcd_debug_print_flag);
 
 	lcd_debug_test = getenv_ulong("lcd_debug_test", 10, 0);
