@@ -127,6 +127,7 @@ struct goodix_ts_data {
     u8 is_950;
 #endif
 
+	u16 chip_verion;
 };
 
 extern u16 show_len;
