@@ -429,18 +429,8 @@
     <string name="arc_hdmi_audio_latency">HDMI ARC Audio Latency</string>
     
     <string name="panel_output">Panel Output</string>
-    <string name="panel600">1024X600</string>
-    <string name="panel600port">600X1024</string>
-    <string name="panel768">1024X768</string>
-    <string name="panel768port">768X1024</string>
-    <string name="panel720">1280X720</string>
-    <string name="panel720port">720X1280</string>
-    <string name="panel1080">1920X1080</string>
-    <string name="panel1080port">1080X1920</string>
-    <string name="panel800port1">800X1280_1</string>
-    <string name="panel800port2">800X1280_2</string>
-    <string name="panel800port3">800X1280_3</string>
-    <string name="panel800port4">800X1280_4</string>
+    <string name="panel800port">800X1280</string>
+    <string name="panel1200port">1200X1920</string>
     
     <string name="screen_density">Screen density control</string>
     <string name="screen_density_120">120</string>

@@ -24,7 +24,7 @@ int32_t HwcConfig::getFramebufferSize(int disp, uint32_t & width, uint32_t & hei
     char uiMode[PROPERTY_VALUE_MAX] = {0};
     if (disp == 0) {
         /*primary display*/
-        if (sys_get_string_prop("persist.sys.builtin.ui_mode", uiMode) > 0) {
+        if ((sys_get_string_prop("persist.sys.builtin.ui_mode", uiMode) > 0) && (isLcdExist() == 1)) {
             if (!strncmp(uiMode, "1280x720", 8)) {
                 width  = 1280;
                 height = 720;
@@ -55,6 +55,9 @@ int32_t HwcConfig::getFramebufferSize(int disp, uint32_t & width, uint32_t & hei
             }else if (!strncmp(uiMode, "800x1280", 8)) {
                 width  = 800;
                 height = 1280;
+            }else if (!strncmp(uiMode, "1200x1920", 8)) {
+                width  = 1200;
+                height = 1920;
             }
 			else {
                 MESON_ASSERT(0, "%s: get not support mode [%s] from vendor.ui_mode",

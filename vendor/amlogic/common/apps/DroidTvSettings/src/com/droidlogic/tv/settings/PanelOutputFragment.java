@@ -43,31 +43,11 @@ import com.droidlogic.app.SystemControlManager;
 public class PanelOutputFragment extends LeanbackPreferenceFragment {
 	private static final String TAG = "PanelOutputFragment";
 	private static final String PANELOUTPUT_RADIO_GROUP = "PanelOutput";
-	private static final String PANELOUTPUT_600 = "PANELOUTPUT_600";
-	private static final String PANELOUTPUT_600PORT = "PANELOUTPUT_600PORT";
-	private static final String PANELOUTPUT_768 = "PANELOUTPUT_768";
-	private static final String PANELOUTPUT_768PORT = "PANELOUTPUT_768PORT";
-	private static final String PANELOUTPUT_720 = "PANELOUTPUT_720";
-	private static final String PANELOUTPUT_720PORT = "PANELOUTPUT_720PORT";
-	private static final String PANELOUTPUT_1080 = "PANELOUTPUT_1080";
-	private static final String PANELOUTPUT_1080PORT = "PANELOUTPUT_1080PORT";
-	private static final String PANELOUTPUT_800PORT1 = "PANELOUTPUT_800PORT1";
-	private static final String PANELOUTPUT_800PORT2 = "PANELOUTPUT_800PORT2";
-	private static final String PANELOUTPUT_800PORT3 = "PANELOUTPUT_800PORT3";
-	private static final String PANELOUTPUT_800PORT4 = "PANELOUTPUT_800PORT4";
+	private static final String PANELOUTPUT_800PORT = "PANELOUTPUT_800PORT";
+	private static final String PANELOUTPUT_1200PORT = "PANELOUTPUT_1200PORT";
 	
-    private static final int OUTPUT_600 = 0;
-	private static final int OUTPUT_600PORT = 1;
-	private static final int OUTPUT_768 = 2;
-	private static final int OUTPUT_768PORT = 3;
-	private static final int OUTPUT_720 = 4;
-	private static final int OUTPUT_720PORT = 5;
-	private static final int OUTPUT_1080 = 6;
-	private static final int OUTPUT_1080PORT = 7;
-	private static final int OUTPUT_800PORT1 = 8;
-	private static final int OUTPUT_800PORT2 = 9;
-	private static final int OUTPUT_800PORT3 = 10;
-	private static final int OUTPUT_800PORT4 = 11;
+	private static final int OUTPUT_800PORT = 0;
+	private static final int OUTPUT_1200PORT = 1;
     
 	private Context mContext;
 	private static final int PANELOUTPUT_SET_DELAY_MS = 500;
@@ -78,30 +58,10 @@ public class PanelOutputFragment extends LeanbackPreferenceFragment {
 	private final Runnable mPanelOutputRunnable = new Runnable() {
 		@Override
 		public void run() {			
-			if (PANELOUTPUT_600.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_600);
-			}else if (PANELOUTPUT_600PORT.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_600PORT);
-			}else if (PANELOUTPUT_768.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_768);
-			}else if (PANELOUTPUT_768PORT.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_768PORT);
-			}else if (PANELOUTPUT_720.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_720);
-			} else if (PANELOUTPUT_720PORT.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_720PORT);
-			}else if (PANELOUTPUT_1080.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_1080);
-			}else if (PANELOUTPUT_1080PORT.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_1080PORT);
-			}else if (PANELOUTPUT_800PORT1.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_800PORT1);
-			}else if (PANELOUTPUT_800PORT2.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_800PORT2);
-			}else if (PANELOUTPUT_800PORT3.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_800PORT3);
-			}else if (PANELOUTPUT_800PORT4.equals(mNewKeyDefinition)) {
-				setPanelOutput(OUTPUT_800PORT4);
+			if (PANELOUTPUT_800PORT.equals(mNewKeyDefinition)) {
+				setPanelOutput(OUTPUT_800PORT);
+			}else if (PANELOUTPUT_1200PORT.equals(mNewKeyDefinition)) {
+				setPanelOutput(OUTPUT_1200PORT);
 			}
 		}
 	};
@@ -145,30 +105,10 @@ public class PanelOutputFragment extends LeanbackPreferenceFragment {
 	private ArrayList<Action> getActions() {
 		ArrayList<Action> actions = new ArrayList<Action>();
 		int checkedKey = whichPanelOutput();
-		actions.add(new Action.Builder().key(PANELOUTPUT_600).title(getString(R.string.panel600))
-				.checked(checkedKey == OUTPUT_600).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_600PORT).title(getString(R.string.panel600port))
-				.checked(checkedKey == OUTPUT_600PORT).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_768).title(getString(R.string.panel768))
-				.checked(checkedKey == OUTPUT_768).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_768PORT).title(getString(R.string.panel768port))
-				.checked(checkedKey == OUTPUT_768PORT).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_720).title(getString(R.string.panel720))
-				.checked(checkedKey == OUTPUT_720).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_720PORT).title(getString(R.string.panel720port))
-				.checked(checkedKey == OUTPUT_720PORT).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_1080).title(getString(R.string.panel1080))
-				.checked(checkedKey == OUTPUT_1080).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_1080PORT).title(getString(R.string.panel1080port))
-				.checked(checkedKey == OUTPUT_1080PORT).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_800PORT1).title(getString(R.string.panel800port1))
-				.checked(checkedKey == OUTPUT_800PORT1).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_800PORT2).title(getString(R.string.panel800port2))
-				.checked(checkedKey == OUTPUT_800PORT2).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_800PORT3).title(getString(R.string.panel800port3))
-				.checked(checkedKey == OUTPUT_800PORT3).build());
-		actions.add(new Action.Builder().key(PANELOUTPUT_800PORT4).title(getString(R.string.panel800port4))
-				.checked(checkedKey == OUTPUT_800PORT4).build());
+		actions.add(new Action.Builder().key(PANELOUTPUT_800PORT).title(getString(R.string.panel800port))
+				.checked(checkedKey == OUTPUT_800PORT).build());
+		actions.add(new Action.Builder().key(PANELOUTPUT_1200PORT).title(getString(R.string.panel1200port))
+				.checked(checkedKey == OUTPUT_1200PORT).build());
 		return actions;
 	}
 
@@ -186,192 +126,34 @@ public class PanelOutputFragment extends LeanbackPreferenceFragment {
 	}
 
 	private int whichPanelOutput() {
-		
-		String defaultPanelOutput;
-		if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
+		if("800x1280".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", "")))
 		{
-			defaultPanelOutput = "800x1280_1";
+			return OUTPUT_800PORT;
+		}
+		else if("1200x1920".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", "")))
+		{
+			return OUTPUT_1200PORT;
 		}
 		else
 		{
-			defaultPanelOutput = "1024x600";
-		}
-		
-		if("1024x600".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_600;
-		}
-		else if("600x1024".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_600PORT;
-		}
-		else if("1024x768".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_768;
-		}
-		else if("768x1024".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_768PORT;
-		}
-		else if("1280x720".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_720;
-		}
-		else if("720x1280".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_720PORT;
-		}
-		else if("1920x1080".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_1080;
-		}
-		else if("1080x1920".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_1080PORT;
-		}
-		else if("800x1280_1".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_800PORT1;
-		}
-		else if("800x1280_2".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_800PORT2;
-		}
-		else if("800x1280_3".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_800PORT3;
-		}
-		else if("800x1280_4".equals(mSystemControl.getPropertyString("persist.sys.builtin.ui_mode", defaultPanelOutput)))
-		{
-			return OUTPUT_800PORT4;
-		}		
-		else
-		{
-			return OUTPUT_600;
+			return OUTPUT_800PORT;
 		}
 	}
 
 	private void setPanelOutput(int keyValue) {
 		switch(keyValue){
-			case OUTPUT_600:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1024x600");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_7");
-				}
-				else
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_1");
-				}
+			case OUTPUT_800PORT:{
+				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "800x1280");
+				mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_0");
 				break;
 			}
-			case OUTPUT_600PORT:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "600x1024");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_1");
-				}
-				else
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_3");
-				}
-				break;
-			}
-			case OUTPUT_768:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1024x768");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					
-				}
-				else
-				{
-					//mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_4");
-				}
-				break;
-			}
-			case OUTPUT_768PORT:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "768x1024");				
-				mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_0");				
-				break;
-			}
-			case OUTPUT_720:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1280x720");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_2");
-				}
-				else
-				{
-					//mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_5");
-				}
-				break;
-			}
-			case OUTPUT_720PORT:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "720x1280");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_6");
-				}
-				else
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_2");
-				}
-				break;
-			}
-			case OUTPUT_1080:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1920x1080");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_3");
-				}
-				else
-				{
-					//mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_6");
-				}
-				break;
-			}
-			case OUTPUT_1080PORT:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1080x1920");
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_7");
-				}
-				break;
-			}
-			case OUTPUT_800PORT1:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "800x1280_1");				
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_4");
-				}
-				break;
-			}
-			case OUTPUT_800PORT2:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "800x1280_2");				
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_5");
-				}
-				break;
-			}
-			case OUTPUT_800PORT3:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "800x1280_3");				
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_6");
-				}
-				break;
-			}
-			case OUTPUT_800PORT4:{
-				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "800x1280_4");				
-				if("u202".equals(mSystemControl.getPropertyString("ro.product.board", "u202")))
-				{
-					mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_9");
-				}
+			case OUTPUT_1200PORT:{
+				mSystemControl.setProperty("persist.sys.builtin.ui_mode", "1200x1920");				
+				mSystemControl.setBootenv("ubootenv.var.panel_type","lcd_1");				
 				break;
 			}
 			default:
-                break;
+                		break;
 		}
 	}
 }
