@@ -331,7 +331,14 @@ int32_t HwcDisplayPipe::initDisplayMode(std::shared_ptr<PipeStat> & stat) {
             break;
         case DRM_MODE_CONNECTOR_PANEL:
             {
-                /*TODO*/
+                if(HwcConfig::isLcdExist() == 1) {
+                    std::map<uint32_t, drm_mode_info_t> modes;
+                    stat->modeConnector->getModes(modes);
+                    MESON_ASSERT(modes.size() > 0, "no modes got.");
+                    MESON_LOGI("set mode (%s)",modes[0].name);
+                    stat->hwcCrtc->setMode(modes[0]);
+                    stat->modeCrtc->setMode(modes[0]);
+                }
             }
             break;
         default:

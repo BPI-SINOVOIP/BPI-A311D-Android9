@@ -87,7 +87,7 @@ int dram_init(void)
 
 int enableCameraVcc(void)
 {
-    /* set gpioa_13 high to enable lcd vcc*/
+    /* set gpioa_13 high to enable camera vcc*/
     writel(readl(PREG_PAD_GPIO5_EN_N) & (~(1 << 13)), PREG_PAD_GPIO5_EN_N);
     writel(readl(PREG_PAD_GPIO5_O) | (1 << 13), PREG_PAD_GPIO5_O);
     writel(readl(PERIPHS_PIN_MUX_E) & (~(0xf << 20)), PERIPHS_PIN_MUX_E);

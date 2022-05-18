@@ -88,7 +88,7 @@
         "loadaddr=3080000\0"\
         "panel_type=lcd_0\0" \
         "lcd_ctrl=0x00000000\0" \
-        "lcd_exist=1\0" \
+        "lcd_exist=0\0" \
         "outputmode=panel\0" \
         "hdmimode=1080p60hz\0" \
         "colorattribute=444,8bit\0"\
@@ -345,6 +345,21 @@
                 "echo detect upgrade key; run update;"\
             "fi;"\
             "\0"\
+        "lcd_detect="\
+            "gpio set GPIOA_9; sleep 1;"\
+            "if gpio input GPIOA_5; then "\
+                "echo detect lcd not exist;"\
+                "setenv lcd_exist 0;"\
+                "fdt addr ${dtb_mem_addr};"\
+                "fdt set /lcd status disable;"\
+                "fdt set /backlight status disable;"\
+                "fdt set /soc/cbus@ffd00000/i2c@1c000 status disable;"\
+                "gpio clear GPIOA_9;"\
+            "else "\
+                "echo detect lcd exist;"\
+                "setenv lcd_exist 1;"\
+            "fi;"\
+            "\0"\
 	"irremote_update="\
 		"if irkey 2500000 0xe31cfb04 0xb748fb04; then "\
 			"echo read irkey ok!; " \
@@ -361,6 +376,7 @@
             "run boot_from_sd_udisk;"\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
+            "run lcd_detect;"\
             "run init_display;"\
             "run storeargs;"\
             "forceupdate;" \
@@ -377,6 +393,7 @@
  * logo2: bootup_rotate_secondary.bmp (for portrait screen)
  */
 #define CONFIG_DUAL_LOGO \
+	"echo dual logo display; " \
 	"setenv outputmode $hdmimode;setenv display_layer osd0;"\
 	"vout output $hdmimode;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
 	"setenv outputmode2 panel;setenv display_layer viu2_osd0;"\
@@ -385,6 +402,7 @@
 
 /* buffer rotate for portrait screen */
 #define CONFIG_SINGLE_LOGO \
+	"echo single logo display; " \
 	"setenv outputmode panel;setenv display_layer osd0;"\
 	"setenv fb_height 1280; setenv fb_width 800;"\
 	"vout output panel;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
