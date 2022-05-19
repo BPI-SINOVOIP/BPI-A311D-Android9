@@ -51,9 +51,9 @@
 		 * power value:(0=output low, 1=output high, 2=input)
 		 * power delay:(unit in ms)
 		 */
-		lcd_cpu-gpios = <&gpio GPIOA_6 GPIO_ACTIVE_HIGH
+		lcd_cpu-gpios = <&gpio GPIOA_10 GPIO_ACTIVE_HIGH
 				&gpio GPIOA_9 GPIO_ACTIVE_HIGH>;
-		lcd_cpu_gpio_names = "GPIOA_6","GPIOA_9";
+		lcd_cpu_gpio_names = "GPIOA_10","GPIOA_9";
 
 		lcd_0{
 			model_name = "RXT101";
@@ -468,9 +468,8 @@
 		pinctrl-1 = <&bl_pwm_off_pins>;
 		pinctrl_version = <2>; /* for uboot */
 		bl_pwm_config = <&bl_pwm_conf>;
-		bl-gpios = <&gpio GPIOA_10 GPIO_ACTIVE_HIGH
-			&gpio GPIOA_11 GPIO_ACTIVE_HIGH>;
-		bl_gpio_names = "GPIOA_10","GPIOA_11";
+		bl-gpios = <&gpio GPIOA_11 GPIO_ACTIVE_HIGH>;
+		bl_gpio_names = "GPIOA_11";
 
 		/* pwm port: PWM_A, PWM_B, PWM_C, PWM_D, PWM_E, PWM_F, PWM_VS*/
 		/* power index:(point gpios_index, 0xff=invalid)
@@ -492,7 +491,7 @@
 			bl_pwm_attr = <1 /*pwm_method(polarity)*/
 				180 /*pwm_freq(pwm:Hz, pwm_vs:multiple of vs)*/
 				100 25>; /*duty_max(%), duty_min(%)*/
-			bl_pwm_power = <1 1 /*pwm_gpio_index, pwm_gpio_off*/
+			bl_pwm_power = <0 1 /*pwm_gpio_index, pwm_gpio_off*/
 				10 10>; /*pwm_on_delay(ms), pwm_off_delay(ms)*/
 			bl_pwm_en_sequence_reverse = <0>; /* 1 for reverse */
 		};
