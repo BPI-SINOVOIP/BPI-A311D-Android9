@@ -347,16 +347,17 @@
             "\0"\
         "lcd_detect="\
             "gpio set GPIOA_9; sleep 1;"\
+            "fdt addr ${dtb_mem_addr};"\
             "if gpio input GPIOA_5; then "\
                 "echo detect lcd not exist;"\
                 "setenv lcd_exist 0;"\
-                "fdt addr ${dtb_mem_addr};"\
                 "fdt set /lcd status disable;"\
                 "fdt set /backlight status disable;"\
                 "fdt set /soc/cbus@ffd00000/i2c@1c000 status disable;"\
                 "gpio clear GPIOA_9;"\
             "else "\
                 "echo detect lcd exist;"\
+                "fdt set /meson-fb display_size_default <${lcd_width} ${lcd_height} ${lcd_width} ${lcd_vir_height} 32>;"\
                 "setenv lcd_exist 1;"\
             "fi;"\
             "\0"\
@@ -400,11 +401,20 @@
 	"vout2 prepare panel;osd open;osd clear;imgread pic logo bootup_secondary $loadaddr;bmp display $bootup_secondary_offset;bmp scale;vout2 output panel;"\
 	"\0"\
 
+/* for portrait panel, recovery always displays on panel */
+#define CONFIG_RECOVERY_DUAL_LOGO \
+	"setenv outputmode panel;setenv display_layer osd0;"\
+	"setenv fb_height ${lcd_height}; setenv fb_width ${lcd_width};"\
+	"vout output $outputmode;osd open;osd clear;imgread pic logo bootup_rotate $loadaddr;bmp display $bootup_rotate_offset;bmp scale;"\
+	"setenv outputmode2 1080p60hz;setenv display_layer viu2_osd0;"\
+	"vout2 prepare $outputmode2;vout2 output $outputmode2;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
+	"\0"\
+
 /* buffer rotate for portrait screen */
 #define CONFIG_SINGLE_LOGO \
 	"echo single logo display; " \
 	"setenv outputmode panel;setenv display_layer osd0;"\
-	"setenv fb_height 1280; setenv fb_width 800;"\
+	"setenv fb_height ${lcd_height}; setenv fb_width ${lcd_width};"\
 	"vout output panel;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
 	"\0"\
 

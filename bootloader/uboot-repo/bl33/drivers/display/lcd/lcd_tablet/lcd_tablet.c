@@ -124,6 +124,9 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	int parent_offset;
 	int child_offset;
 	char propname[30];
+	char lcd_height[16];
+	char lcd_width[16];
+	char lcd_vir_height[16];
 	char *propdata;
 	unsigned int temp;
 	int len;
@@ -186,6 +189,14 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		pconf->lcd_basic.lcd_bits = be32_to_cpup((((u32*)propdata)+4));
 		pconf->lcd_basic.screen_width = be32_to_cpup((((u32*)propdata)+5));
 		pconf->lcd_basic.screen_height = be32_to_cpup((((u32*)propdata)+6));
+
+		/* bpi, set env for detec_lcd update dtb meson-fb/display_size_default */
+		sprintf(lcd_width, "%u", pconf->lcd_basic.h_active);  //800
+		sprintf(lcd_height, "%u", pconf->lcd_basic.v_active); //1280
+		sprintf(lcd_vir_height, "%u", pconf->lcd_basic.v_active*2);
+		setenv("lcd_width", lcd_width);
+		setenv("lcd_height", lcd_height);
+		setenv("lcd_vir_height", lcd_vir_height);
 	}
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "range_setting", NULL);
