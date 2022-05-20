@@ -484,9 +484,9 @@
 			bl_level_attr = <255 10 /*max, min*/
 				128 128>; /*mid, mid_mapping*/
 			bl_ctrl_method = <1>; /* 1=pwm, 2=pwm_combo, 4=extern */
-			bl_power_attr = <0 /*en_gpio_index*/
-				1 0 /*on_value, off_value*/
-				200 200>; /*on_delay(ms), off_delay(ms)*/
+			//bl_power_attr = <0 /*en_gpio_index*/
+			//	1 0 /*on_value, off_value*/
+			//	200 200>; /*on_delay(ms), off_delay(ms)*/
 			bl_pwm_port = "PWM_F";
 			bl_pwm_attr = <1 /*pwm_method(polarity)*/
 				180 /*pwm_freq(pwm:Hz, pwm_vs:multiple of vs)*/
