@@ -1141,7 +1141,7 @@
 		mux {
 			pins = "GPIOA_11";
 			function = "gpio_periphs";
-			output-high;
+			output-low;
 		};
 	};
 }; /* end of pinctrl_periphs */
