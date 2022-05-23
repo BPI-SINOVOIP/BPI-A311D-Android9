@@ -16,6 +16,7 @@ LOCAL_SRC_FILES:= service.cpp
 include $(LOCAL_PATH)/surfaceflinger.mk
 
 LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libhidlbase \
     libhidltransport \
     libbase \

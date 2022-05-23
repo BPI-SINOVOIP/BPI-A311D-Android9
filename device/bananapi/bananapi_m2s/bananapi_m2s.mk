@@ -562,7 +562,8 @@ PRODUCT_PACKAGES += \
 #
 #########################################################################
 PRODUCT_PROPERTY_OVERRIDES += \
-    persist.sys.navigationbarcanmove=false
+    persist.sys.navigationbarcanmove=false \
+    ro.sf.primary_display_orientation=90
 #########################################################################
 #
 #                            factory test
