@@ -869,16 +869,19 @@
 	pinctrl-0=<&i2c3_master_pins2>; /* GPIOA_14,GPIOA_15 */
 	clock-frequency = <400000>; /* default 100k */
 
-        touchscreen@5d {
-                compatible = "goodix,gt9xx";
-                status = "okay";
-                reg = <0x5d>;
-                reset-gpio = <&gpio GPIOA_6 GPIO_ACTIVE_HIGH>;
-                irq-gpio = <&gpio GPIOA_5 GPIO_ACTIVE_HIGH>;
-                rotation = <4>;
+	touchscreen@5d {
+		compatible = "goodix,gt9xx";
+		status = "okay";
+		reg = <0x5d>;
+		reset-gpio = <&gpio GPIOA_6 GPIO_ACTIVE_HIGH>;
+		irq-gpio = <&gpio GPIOA_5 GPIO_ACTIVE_HIGH>;
+		rotation = <4>; /* sf_rotation 0 */
+		//rotation = <0>; /* sf_rotation 90*/
+		//rotation = <5>; /* sf_rotation 180 */
+		//rotation = <3>; /* sf_rotation 270 */
 
 		/*800x1280, RXT101 panel*/
-                goodix,cfg-group0 = [
+		goodix,cfg-group0 = [
 			46 00 05 20 03 05 3D 00 01 0F 1E 0F 50 32 03
 			05 00 00 00 00 00 00 04 18 1A 1E 14 8E 2E 88
 			2C 2A B5 06 00 00 00 22 02 24 00 00 00 00 00
@@ -908,7 +911,7 @@
 			21 20 1F 1E 1C 1B 19 14 13 12 11 10 0F 0E 0D
 			0C 0A 08 07 06 04 02 00 FF 00 00 00 00 00 00
 			00 00 00 00 12 01 ];
-        };
+	};
 };
 
 &audiobus {

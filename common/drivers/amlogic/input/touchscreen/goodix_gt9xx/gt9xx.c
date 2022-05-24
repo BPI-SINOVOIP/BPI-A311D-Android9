@@ -401,14 +401,19 @@ if (1 == rotation) {
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, ts->abs_y_max-y);
 	}else if (4 == rotation) { /* bpi, 800x1280 panel */
 		GTP_SWAP(x, y);
-        input_report_abs(ts->input_dev, ABS_MT_POSITION_X, ts->abs_x_max-x);
-        input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
-    }else{
+		input_report_abs(ts->input_dev, ABS_MT_POSITION_X, ts->abs_x_max-x);
+		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
+	}else if (5 == rotation) { /* bpi, 800x1280 panel */
+		GTP_SWAP(x, y);
+		input_report_abs(ts->input_dev, ABS_MT_POSITION_X, x);
+		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, ts->abs_y_max-y);
+	}else{
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_X, x);
 		input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
 	}
-    input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
-    input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
+
+	input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
+	input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
 #else
 
 	if((id & 0x80)) {//pen
@@ -1859,7 +1864,7 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
     input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
 #endif
 
-if (1 == rotation || 4 == rotation) {
+if (1 == rotation || 4 == rotation || 5 == rotation) {
     GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
 }
 
