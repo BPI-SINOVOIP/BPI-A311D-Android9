@@ -415,16 +415,6 @@ bool BootAnimation::bootVideo() {
         return -1;
 
     // create the native surface
-	if ( 1 == mRotation || 3 == mRotation) {
-		int temp = dinfo.h;
-		dinfo.h= dinfo.w;
-		dinfo.w= temp;
-	}
-	Rect destRect(dinfo.w, dinfo.h);
-	SurfaceComposerClient::Transaction tr;
-	tr.setDisplayProjection(dtoken, mRotation, destRect, destRect);
-	tr.apply();
-	
     sp<SurfaceControl> control = session()->createSurface(String8("BootVideo"),
             dinfo.w, dinfo.h, PIXEL_FORMAT_RGB_565);
 
@@ -784,7 +774,7 @@ status_t BootAnimation::InputReaderThread::readyToRun() {
 // ---------------------------------------------------------------------------------
 BootAnimation::BootAnimation(sp<Callbacks> callbacks)
         : Thread(false), mClockEnabled(true), mTimeIsAccurate(false),
-        mTimeFormat12Hour(false), mTimeCheckThread(NULL), mCallbacks(callbacks), mRotation(0) {
+        mTimeFormat12Hour(false), mTimeCheckThread(NULL), mCallbacks(callbacks) {
     mSession = new SurfaceComposerClient();
 
     std::string powerCtl = android::base::GetProperty("sys.powerctl", "");
@@ -793,12 +783,6 @@ BootAnimation::BootAnimation(sp<Callbacks> callbacks)
     } else {
         mShuttingDown = true;
     }
-	
-	char rotate[PROPERTY_VALUE_MAX];
-	if (property_get("persist.sys.builtinrotation", rotate, "0") > 0)
-		mRotation = atoi(rotate);
-	else
-		ALOGD("BootAnimation get property error\n");
 }
 
 void BootAnimation::onFirstRef() {
@@ -949,17 +933,6 @@ status_t BootAnimation::readyToRun() {
         return -1;
 
     // create the native surface
-	
-	if ( 1 == mRotation || 3 == mRotation) {
-		int temp = dinfo.h;
-		dinfo.h= dinfo.w;
-		dinfo.w= temp;
-	}
-	Rect destRect(dinfo.w, dinfo.h);
-	SurfaceComposerClient::Transaction tr;
-	tr.setDisplayProjection(dtoken, mRotation, destRect, destRect);
-	tr.apply();
-
     sp<SurfaceControl> control = session()->createSurface(String8("BootAnimation"),
             dinfo.w, dinfo.h, PIXEL_FORMAT_RGBA_8888);
 

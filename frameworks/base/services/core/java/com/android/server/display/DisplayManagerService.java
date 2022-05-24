@@ -1244,7 +1244,7 @@ public final class DisplayManagerService extends SystemService {
                     + device.getDisplayDeviceInfoLocked());
             return;
         }
-        display.configureDisplayLocked(t, device, info.state == Display.STATE_OFF,getRotation());
+        display.configureDisplayLocked(t, device, info.state == Display.STATE_OFF);
 
         // Update the viewports if needed.
         if (!mDefaultViewport.valid
@@ -2120,12 +2120,6 @@ public final class DisplayManagerService extends SystemService {
                     == PackageManager.PERMISSION_GRANTED;
         }
     }
-	
-	public int mRotation = 0;
-	
-	public int getRotation() {
-		return mRotation;
-	}
 
     private final class LocalService extends DisplayManagerInternal {
         @Override
@@ -2202,10 +2196,6 @@ public final class DisplayManagerService extends SystemService {
         public void getNonOverrideDisplayInfo(int displayId, DisplayInfo outInfo) {
             getNonOverrideDisplayInfoInternal(displayId, outInfo);
         }
-		
-		public void setRotation(int newRotation) {
-			mRotation = newRotation;
-		}
 
         @Override
         public void performTraversal(SurfaceControl.Transaction t) {

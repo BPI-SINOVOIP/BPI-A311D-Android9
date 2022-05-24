@@ -597,7 +597,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private boolean mForceDefaultOrientation = false;
 
     int mUserRotationMode = WindowManagerPolicy.USER_ROTATION_FREE;
-    int mUserRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+    int mUserRotation = Surface.ROTATION_0;
 
     boolean mSupportAutoRotation;
     int mAllowAllRotations = -1;
@@ -2374,8 +2374,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (width > height) {
             shortSize = height;
             longSize = width;
-            mLandscapeRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
-            mSeascapeRotation = (mLandscapeRotation + 2)%4;
+            mLandscapeRotation = Surface.ROTATION_0;
+            mSeascapeRotation = Surface.ROTATION_180;
             if (res.getBoolean(com.android.internal.R.bool.config_reverseDefaultRotation)) {
                 mPortraitRotation = Surface.ROTATION_90;
                 mUpsideDownRotation = Surface.ROTATION_270;
@@ -2386,8 +2386,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         } else {
             shortSize = width;
             longSize = height;
-            mPortraitRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
-            mUpsideDownRotation = (mLandscapeRotation + 2)%4;
+            mPortraitRotation = Surface.ROTATION_0;
+            mUpsideDownRotation = Surface.ROTATION_180;
             if (res.getBoolean(com.android.internal.R.bool.config_reverseDefaultRotation)) {
                 mLandscapeRotation = Surface.ROTATION_270;
                 mSeascapeRotation = Surface.ROTATION_90;
@@ -2515,7 +2515,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
             // Configure rotation lock.
             int userRotation = Settings.System.getIntForUser(resolver,
-                    Settings.System.USER_ROTATION, SystemProperties.getInt("persist.sys.builtinrotation", 0),
+                    Settings.System.USER_ROTATION, Surface.ROTATION_0,
                     UserHandle.USER_CURRENT);
             if (mUserRotation != userRotation) {
                 mUserRotation = userRotation;
@@ -7414,7 +7414,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             if (!defaultDisplay) {
                 // For secondary displays we ignore things like displays sensors, docking mode and
                 // rotation lock, and always prefer a default rotation.
-                preferredRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+                preferredRotation = Surface.ROTATION_0;
             } else if (mLidState == LID_OPEN && mLidOpenRotation >= 0) {
                 // Ignore sensor when lid switch is open and rotation is forced.
                 preferredRotation = mLidOpenRotation;
@@ -7559,7 +7559,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     if (preferredRotation >= 0) {
                         return preferredRotation;
                     }
-                    return SystemProperties.getInt("persist.sys.builtinrotation", 0);
+                    return Surface.ROTATION_0;
             }
         }
     }

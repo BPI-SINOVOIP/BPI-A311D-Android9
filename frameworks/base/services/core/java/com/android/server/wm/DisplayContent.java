@@ -133,7 +133,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.os.SystemProperties;
 import android.os.Trace;
 import android.util.ArraySet;
 import android.util.DisplayMetrics;
@@ -260,7 +259,7 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
      *
      * @see #updateRotationUnchecked()
      */
-    private int mRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+    private int mRotation = 0;
 
     /**
      * Last applied orientation of the display.
@@ -1114,7 +1113,6 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
             }, true /* traverseTopToBottom */);
         }
 
-		mService.mDisplayManagerInternal.setRotation(rotation%2);
         mService.mDisplayManagerInternal.performTraversal(getPendingTransaction());
         scheduleAnimation();
 

@@ -225,7 +225,6 @@ private:
     SortedVector<String8> mLoadedFiles;
     sp<TimeCheckThread> mTimeCheckThread = nullptr;
     sp<Callbacks> mCallbacks;
-	int         mRotation;
 };
 
 // ---------------------------------------------------------------------------
