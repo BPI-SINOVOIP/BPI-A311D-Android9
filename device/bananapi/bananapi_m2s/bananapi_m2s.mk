@@ -433,16 +433,7 @@ BUILD_WITH_LOWMEM_COMMON_CONFIG := true
 
 BOARD_USES_USB_PM := true
 
-
 include device/bananapi/common/software.mk
-ifeq ($(TARGET_BUILD_GOOGLE_ATV),true)
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sf.lcd_density=320
-else
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sf.lcd_density=213
-endif
-
 
 #########################################################################
 #
@@ -558,14 +549,6 @@ PRODUCT_PACKAGES += \
     Provision
 #########################################################################
 #
-#                            PROPERTIES
-#
-#########################################################################
-PRODUCT_PROPERTY_OVERRIDES += \
-    persist.sys.navigationbarcanmove=false \
-    ro.sf.primary_display_orientation=90
-#########################################################################
-#
 #                            factory test
 #
 #########################################################################
@@ -581,3 +564,21 @@ PRODUCT_PACKAGES += AndroidStressTest
 PRODUCT_PROPERTY_OVERRIDES += \
 	sys.test.producttest=true
 endif
+#########################################################################
+#
+#                            PROPERTIES
+#
+#########################################################################
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.navigationbarcanmove=false
+
+ifeq ($(BPI_FACTORY_TEST), true)
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.sf.lcd_density=160 \
+    ro.sf.primary_display_orientation=90
+else
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.sf.lcd_density=213 \
+    ro.sf.primary_display_orientation=0
+endif
+

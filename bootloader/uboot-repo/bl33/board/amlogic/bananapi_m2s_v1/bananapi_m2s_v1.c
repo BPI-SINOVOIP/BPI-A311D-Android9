@@ -677,11 +677,15 @@ void get_hw_revision(void)
 	int val;
 
 	val = get_adc_value(BOARD_TYPE_CHANNEL);
-	if (IS_RANGE(val, 80, 100)) {
-		//board is s922x_m2s
+	if (IS_RANGE(val, 0, 50)) {
+		//setenv for test adc
+		printf("Board is S922X\n");
+		setenv("board_type", "S922X");
 	}
 	else if (IS_RANGE(val, 900, 1100)) {
-		//board is a311d_m2s
+		//setenv for test adc
+		printf("Board is A311D\n");
+		setenv("board_type", "A311D");
 	}
 
 	val = get_adc_value(BOARD_REV_CHANNEL);
