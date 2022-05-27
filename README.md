@@ -33,10 +33,9 @@ Because github limit 100MB size for single file, please download the [oversize f
     [NUM]   [       PROJECT]     [  SOC TYPE]  [   HARDWARE TYPE]
     ---------------------------------------------------------------
     [ 1]    [           m2s]     [     A311D]  [    BANANAPI_M2S]
-    [ 2]    [      m2s_mbox]     [     A311D]  [    BANANAPI_M2S]
     ...
     ---------------------------------------------------------------
-    please select platform type (default 1(Ampere)):1
+    please select platform type (default 1(m2s)):1
     ...
 
 ----------

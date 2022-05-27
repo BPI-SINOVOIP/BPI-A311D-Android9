@@ -14,7 +14,7 @@ if [ $# -eq 1 ] && [ $1 == "help" ]; then
 fi
 #Project Name          SOC Name                Hardware Name                  device/bananapi project name        uboot compile params                 tdk path
 project[1]="m2s"       ;soc[1]="A311D"        ;hardware[1]="BANANAPI_M2S"     ;module[1]="bananapi_m2s"           ;uboot[1]="bananapi_m2s_v1"           ;tdk[1]="g12a/bl32.img"
-project[2]="m2s_mbox"  ;soc[2]="A311D"        ;hardware[2]="BANANAPI_M2S"     ;module[2]="bananapi_m2s_mbox"      ;uboot[2]="bananapi_m2s_v1"           ;tdk[2]="g12a/bl32.img"
+#project[2]="m2s_mbox"  ;soc[2]="A311D"        ;hardware[2]="BANANAPI_M2S"     ;module[2]="bananapi_m2s_mbox"      ;uboot[2]="bananapi_m2s_v1"           ;tdk[2]="g12a/bl32.img"
 
 platform_avb_param=""
 platform_type=1
@@ -31,7 +31,7 @@ read_platform_type() {
         done
 
         echo "---------------------------------------------"
-        read -p "please select platform type (default 1(Ampere)):" platform_type
+        read -p "please select platform type (default 1(m2s)):" platform_type
         if [ ${#platform_type} -eq 0 ]; then
             platform_type=1
         fi
