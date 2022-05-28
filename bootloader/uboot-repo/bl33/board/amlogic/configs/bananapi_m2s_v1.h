@@ -95,8 +95,8 @@
         "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
-        "display_bpp=24\0" \
-        "display_color_index=24\0" \
+        "display_bpp=16\0" \
+        "display_color_index=16\0" \
         "display_layer=osd0\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
@@ -405,9 +405,9 @@
 #define CONFIG_RECOVERY_DUAL_LOGO \
 	"setenv outputmode panel;setenv display_layer osd0;"\
 	"setenv fb_height ${lcd_height}; setenv fb_width ${lcd_width};"\
-	"vout output $outputmode;osd open;osd clear;imgread pic logo bootup_rotate $loadaddr;bmp display $bootup_rotate_offset;bmp scale;"\
+	"vout output $outputmode;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
 	"setenv outputmode2 1080p60hz;setenv display_layer viu2_osd0;"\
-	"vout2 prepare $outputmode2;vout2 output $outputmode2;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
+	"vout2 prepare $outputmode2;vout2 output $outputmode2;osd open;osd clear;imgread pic logo bootup_secondary $loadaddr;bmp display $bootup_secondary_offset;bmp scale;"\
 	"\0"\
 
 /* buffer rotate for portrait screen */
