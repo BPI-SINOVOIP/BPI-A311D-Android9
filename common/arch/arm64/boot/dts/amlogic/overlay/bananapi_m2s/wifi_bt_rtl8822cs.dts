@@ -21,6 +21,8 @@
 
 		__overlay__ {
 			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&a_uart_cts_rts_pins>;
 		};
 	};
 

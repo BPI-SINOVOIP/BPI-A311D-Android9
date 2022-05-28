@@ -8,6 +8,8 @@
 
 		__overlay__ {
 			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&b_uart_pins>; /* GPIOX_6,GPIOX_7 */
 		};
 	};
 };
