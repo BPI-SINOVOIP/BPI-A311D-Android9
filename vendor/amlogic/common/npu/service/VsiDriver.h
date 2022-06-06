@@ -28,6 +28,7 @@
 #include "VsiDevice.h"
 #include "HalInterfaces.h"
 #include "Utils.h"
+#include "CustomizeOpSupportList.h"
 
 #include <sys/system_properties.h>
 #include <android-base/logging.h>
@@ -52,9 +53,30 @@ class VsiDriver : public VsiDevice {
 #endif
 
 #if ANDROID_SDK_VERSION >= 29
+    Return<void> getSupportedExtensions(V1_2::IDevice::getSupportedExtensions_cb _hidl_cb);
     Return<void> getCapabilities_1_2(V1_2::IDevice::getCapabilities_1_2_cb _hidl_cb) ;
     Return<void> getSupportedOperations_1_2( const V1_2::Model& model,
                                                    V1_2::IDevice::getSupportedOperations_1_2_cb cb) ;
+
+    static uint16_t findExtensionOperation(const HalPlatform::Operation& operation) {
+        int32_t operationType = static_cast<int32_t>(operation.type);
+#if ANDROID_SDK_VERSION < 30
+        const uint8_t kLowBitsType = static_cast<uint8_t>(HalPlatform::Model::ExtensionTypeEncoding::LOW_BITS_TYPE);
+#elif ANDROID_SDK_VERSION >= 30
+        const uint8_t kLowBitsType = static_cast<uint8_t>(ExtensionTypeEncoding::LOW_BITS_TYPE);
+#endif
+        const uint32_t kTypeWithinExtensionMask = (1 << kLowBitsType) - 1;
+        uint16_t extensionSupportMask = static_cast<int32_t>(operationType) >> kLowBitsType;
+        uint16_t typeWithinExtension = static_cast<int32_t>(operationType) & kTypeWithinExtensionMask;
+        if (extensionSupportMask != 0) return typeWithinExtension;
+        return 0;
+    };
+#endif
+
+#if ANDROID_SDK_VERSION >= 30
+    V1_2::OperandType convertOperandTypeToV1_2(OperandType type);
+    Return<void> getCapabilities_1_3(getCapabilities_1_3_cb _hidl_cb);
+    Return<void> getSupportedOperations_1_3(const V1_3::Model& model,getSupportedOperations_1_3_cb _hidl_cb);
 #endif
     static bool isSupportedOperation(const HalPlatform::Operation& operation,
                                      const HalPlatform::Model& model,
@@ -73,13 +95,38 @@ class VsiDriver : public VsiDevice {
     Return<void> getSupportedOperationsBase(const T_model& model,
                                             T_getSupportOperationsCallback cb){
         LOG(INFO) << "getSupportedOperations";
+        int model_size_block_level = getSystemPropertyAsInt("MODEL_BLOCK_LEVEL", 0);
+
+        if (model_size_block_level < 0 || model_size_block_level > 4) {
+            LOG(FATAL) << "MODEL_BLOCK_LEVEL should be any value of {0, 1, 2, 3} \n"
+                          "block_level = 3: reject model with size L,M,S\n"
+                          "block_level = 2: reject model with size L,M\n"
+                          "block_level = 1: reject model with size L\n"
+                          "block_level = 0: don't reject model";
+        }
+
         if (validateModel(model)) {
+#if ANDROID_SDK_VERSION < 30
             const size_t count = model.operations.size();
+#elif ANDROID_SDK_VERSION >=30
+            const size_t count = model.main.operations.size();
+#endif
             std::vector<bool> supported(count, true);
             std::string notSupportReason = "";
             for (size_t i = 0; i < count; i++) {
+#if ANDROID_SDK_VERSION < 30
                 const auto& operation = model.operations[i];
-                supported[i] = isSupportedOperation(operation, model, notSupportReason);
+#elif ANDROID_SDK_VERSION >= 30
+                const auto& operation = model.main.operations[i];
+#endif
+#if ANDROID_SDK_VERSION >= 29
+                supported[i] = findExtensionOperation(operation) ||
+                               (!IsOpBlocked(static_cast<int32_t>(operation.type)) &&
+                                isSupportedOperation(operation, model, notSupportReason));
+#else
+                supported[i] = !IsOpBlocked(static_cast<int32_t>(operation.type)) &&
+                               isSupportedOperation(operation, model, notSupportReason);
+#endif
             }
             LOG(INFO) << notSupportReason;
             cb(ErrorStatus::NONE, supported);

@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (c) 2005 - 2020 by Vivante Corp.  All rights reserved.
+*    Copyright (c) 2005 - 2021 by Vivante Corp.  All rights reserved.
 *
 *    The material in this file is confidential and contains trade secrets
 *    of Vivante Corporation. This is proprietary information owned by
@@ -31,9 +31,6 @@ typedef struct _VIV_VIDMEM_METADATA
 
     int32_t  ts_fd;
     void *   ts_dma_buf;
-#ifdef gcdANDROID
-    dma_addr_t ts_address;
-#endif
 
     uint32_t fc_enabled;
     uint32_t fc_value;

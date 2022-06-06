@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -59,6 +59,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANDROID_PROFILER_COUNTERS   1
+#define APP_INFO   1
+#define FPGA_INFO   0
+#define RECORD_COUNTER_ADDRESS  0
 
 /* HW profile information. */
 typedef struct _gcsPROFILER_COUNTERS_PART1
@@ -349,7 +354,7 @@ typedef struct _gcsPROFILER_VIP_PROBE_COUNTERS
     gctUINT32       nn_non_zero_coef_count_overflow;
 
     gctUINT32       nn_reserved_counter[4 * MODULE_NN_RESERVED_COUNTER_NUM];
-    gctUINT32       nn_total_idle_cycle_core_overflow;
+    gctUINT32       nn_total_idle_cycle_core_overflow[4];
     gctUINT32       nn_total_idle_cycle_core[32];
 
     /* TP */

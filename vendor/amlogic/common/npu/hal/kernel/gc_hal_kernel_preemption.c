@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -60,6 +60,264 @@
 #if gcdENABLE_SW_PREEMPTION
 #define _GC_OBJ_ZONE    gcvZONE_KERNEL
 
+static const gctUINT32 _PatchItemSize[] =
+{
+    0,
+    (gctUINT32)sizeof(gcsHAL_PATCH_VIDMEM_ADDRESS),
+    (gctUINT32)sizeof(gcsHAL_PATCH_MCFE_SEMAPHORE),
+    (gctUINT32)sizeof(gcsHAL_PATCH_VIDMEM_TIMESTAMP),
+};
+
+static gceSTATUS
+_GetPatchListSingle(
+    IN gckCOMMAND Command,
+    IN gcsHAL_COMMAND_LOCATION * CommandBuffer,
+    IN gcsHAL_PATCH_LIST * PatchList,
+    IN gctBOOL NeedCopy
+    )
+{
+    gceSTATUS status;
+    gctPOINTER userPtr = gcvNULL;
+    gctUINT32 index = 0;
+    gctUINT32 count = 0;
+    gctUINT32 itemSize = 0;
+    gctUINT32 batchCount = 0;
+    gcsPATCH_ARRAY *patchArray = gcvNULL;
+    gcsPATCH_ARRAY *patchArrayHead = gcvNULL;
+    gcsPATCH_ARRAY *cursor = gcvNULL;
+    gctPOINTER pointer = gcvNULL;
+    gcsHAL_PATCH_MCFE_SEMAPHORE * patch = gcvNULL;
+
+    gcmkHEADER_ARG("Command=%p CommandBuffer=%p PatchList=%p type=%d",
+                   Command, CommandBuffer, PatchList, PatchList->type);
+
+    if (PatchList->type >= gcmCOUNTOF(_PatchItemSize))
+    {
+        gcmkONERROR(gcvSTATUS_INVALID_ARGUMENT);
+    }
+
+    itemSize = _PatchItemSize[PatchList->type];
+
+    batchCount = (gctUINT32)(sizeof(gctUINT64) * 32 / itemSize);
+
+    while (index < PatchList->count)
+    {
+        count = PatchList->count - index;
+
+        if (count > batchCount)
+        {
+            count = batchCount;
+        }
+
+        userPtr = gcmUINT64_TO_PTR(PatchList->patchArray + itemSize * index);
+
+        if (userPtr)
+        {
+            gcmkONERROR(gckOS_Allocate(
+                Command->os,
+                gcmSIZEOF(gcsPATCH_ARRAY),
+                &pointer));
+
+            patchArray = (gcsPATCH_ARRAY *)pointer;
+
+            gckOS_ZeroMemory(patchArray, sizeof(gcsPATCH_ARRAY));
+
+            if (NeedCopy)
+            {
+                status = gckOS_CopyFromUserData(
+                    Command->os,
+                    patchArray->kArray,
+                    userPtr,
+                    itemSize * count
+                    );
+            }
+            else
+            {
+                gctPOINTER kArray = patchArray->kArray;
+
+                status = gckOS_MapUserPointer(
+                    Command->os,
+                    userPtr,
+                    itemSize * count,
+                    (gctPOINTER *)&kArray
+                    );
+            }
+
+            patch = (gcsHAL_PATCH_MCFE_SEMAPHORE *)patchArray->kArray;
+
+            if (gcmIS_ERROR(status))
+            {
+                userPtr = gcvNULL;
+                gcmkONERROR(status);
+            }
+
+            if (index)
+            {
+                cursor->next = patchArray;
+                cursor = cursor->next;
+            }
+            else
+            {
+                cursor = patchArray;
+                patchArrayHead = patchArray;
+            }
+
+
+            if (!NeedCopy)
+            {
+                gcmkVERIFY_OK(gckOS_UnmapUserPointer(
+                    Command->os,
+                    userPtr,
+                    itemSize * count,
+                    patchArray->kArray
+                    ));
+            }
+        }
+
+        index += count;
+    }
+
+    PatchList->patchArray = gcmPTR_TO_UINT64(patchArrayHead);
+
+    gcmkFOOTER_NO();
+    return gcvSTATUS_OK;
+
+OnError:
+    if (!NeedCopy && userPtr)
+    {
+        gcmkVERIFY_OK(gckOS_UnmapUserPointer(
+            Command->os,
+            userPtr,
+            itemSize * count,
+            patchArray->kArray
+            ));
+
+        userPtr = gcvNULL;
+    }
+
+    gcmkFOOTER();
+    return status;
+}
+
+static gceSTATUS
+_GetPatchList(
+    IN gckCOMMAND Command,
+    IN gcsHAL_COMMAND_LOCATION * CommandBuffer
+    )
+{
+    gceSTATUS status;
+    gctBOOL needCopy = gcvFALSE;
+    gcsHAL_PATCH_LIST * kPatchList = gcvNULL;
+    gcsHAL_PATCH_LIST * cursor = gcvNULL;
+    gctPOINTER userPtr = gcmUINT64_TO_PTR(CommandBuffer->patchHead);
+    gctPOINTER pointer = gcvNULL;
+    gctUINT32 index = 0;
+
+    gcmkHEADER_ARG("Command=%p CommandBuffer=%p", Command, CommandBuffer);
+
+    gcmkONERROR(gckOS_QueryNeedCopy(Command->os, 0, &needCopy));
+
+    if (!userPtr)
+    {
+        CommandBuffer->patchHead = 0;
+    }
+
+    while (userPtr)
+    {
+        gctUINT64 next;
+
+        gcmkONERROR(gckOS_Allocate(
+            Command->os,
+            gcmSIZEOF(gcsHAL_PATCH_LIST),
+            &pointer));
+
+        kPatchList = (gcsHAL_PATCH_LIST *)pointer;
+
+        gcmkONERROR(gckOS_ZeroMemory(kPatchList, sizeof(gcsHAL_PATCH_LIST)));
+
+        if (needCopy)
+        {
+            status = gckOS_CopyFromUserData(
+                Command->os,
+                kPatchList,
+                userPtr,
+                sizeof(gcsHAL_PATCH_LIST)
+                );
+        }
+        else
+        {
+            status = gckOS_MapUserPointer(
+                Command->os,
+                userPtr,
+                sizeof(gcsHAL_PATCH_LIST),
+                (gctPOINTER *)&kPatchList
+                );
+        }
+
+        if (gcmIS_ERROR(status))
+        {
+            userPtr = gcvNULL;
+            gcmkONERROR(status);
+        }
+
+        gcmkASSERT(kPatchList->type < gcvHAL_PATCH_TYPE_COUNT);
+
+        gcmkONERROR(
+            _GetPatchListSingle(Command,
+                                CommandBuffer,
+                                kPatchList,
+                                needCopy));
+
+        if (index)
+        {
+            cursor->next = gcmPTR_TO_UINT64(kPatchList);
+            cursor = (gcsHAL_PATCH_LIST *)gcmUINT64_TO_PTR(cursor->next);
+        }
+        else
+        {
+            cursor = kPatchList;
+            CommandBuffer->patchHead = gcmPTR_TO_UINT64(kPatchList);
+        }
+
+        next = kPatchList->next;
+
+        if (!needCopy)
+        {
+            gcmkVERIFY_OK(gckOS_UnmapUserPointer(
+                Command->os,
+                userPtr,
+                sizeof(gcsHAL_PATCH_LIST),
+                kPatchList
+                ));
+        }
+
+        userPtr = gcmUINT64_TO_PTR(next);
+        index++;
+    }
+
+    gcmkFOOTER_NO();
+    return gcvSTATUS_OK;
+
+OnError:
+    if (userPtr)
+    {
+        CommandBuffer->patchHead = 0;
+    }
+
+    if (!needCopy && userPtr)
+    {
+        gcmkVERIFY_OK(gckOS_UnmapUserPointer(
+            Command->os,
+            userPtr,
+            sizeof(gcsHAL_PATCH_LIST),
+            kPatchList
+            ));
+    }
+
+    gcmkFOOTER();
+    return status;
+}
+
 /*******************************************************************************
 **
 **  gckKERNEL_DestroyPreemptCommit
@@ -89,6 +347,10 @@ gckKERNEL_DestroyPreemptCommit(
     gckVIDMEM_NODE nodeObject = gcvNULL;
     gcsQUEUE_PTR eventQueue = gcvNULL;
     gcsQUEUE_PTR nextEventQueue = gcvNULL;
+    gcsPATCH_ARRAY *patchArray = gcvNULL;
+    gcsPATCH_ARRAY *nextPatchArray = gcvNULL;
+    gcsHAL_PATCH_LIST * patchList = gcvNULL;
+    gcsHAL_PATCH_LIST * nextPatchList = gcvNULL;
     gceSTATUS status = gcvSTATUS_OK;
 
     gcmkHEADER_ARG("Kernel=%p PreemptComimt=%p", Kernel, PreemptCommit);
@@ -100,6 +362,28 @@ gckKERNEL_DestroyPreemptCommit(
 
     while (cmdLoc)
     {
+        patchList = (gcsHAL_PATCH_LIST *)gcmUINT64_TO_PTR(cmdLoc->patchHead);
+        while (patchList)
+        {
+            nextPatchList = (gcsHAL_PATCH_LIST *)gcmUINT64_TO_PTR(patchList->next);
+
+
+            patchArray = (gcsPATCH_ARRAY *)gcmUINT64_TO_PTR(patchList->patchArray);
+
+            while (patchArray)
+            {
+                nextPatchArray = patchArray->next;
+
+                gcmkVERIFY_OK(gcmkOS_SAFE_FREE(Kernel->os, patchArray));
+
+                patchArray = nextPatchArray;
+            }
+
+            gcmkVERIFY_OK(gcmkOS_SAFE_FREE(Kernel->os, patchList));
+
+            patchList = nextPatchList;
+        }
+
         gcmkVERIFY_OK(gckVIDMEM_HANDLE_Lookup(
             Kernel,
             PreemptCommit->pid,
@@ -232,6 +516,8 @@ gckKERNEL_ConstructPreemptCommit(
 
     preemptCommit = (gckPREEMPT_COMMIT)pointer;
 
+    gcmkVERIFY_OK(gckOS_ZeroMemory(preemptCommit, sizeof(gcsPREEMPT_COMMIT)));
+
     if (SubCommit->context)
     {
         context = gckKERNEL_QueryPointerFromName(
@@ -270,11 +556,12 @@ gckKERNEL_ConstructPreemptCommit(
 
     cmdLocHead->logical = gcmPTR_TO_UINT64(commandBufferLogical);
 
+    gcmkONERROR(_GetPatchList(Kernel->command, cmdLocHead));
+
     cursor = cmdLocHead;
 
     do
     {
-        gcsHAL_COMMAND_LOCATION * user;
         if (userPtr)
         {
             gcmkONERROR(
@@ -327,6 +614,8 @@ gckKERNEL_ConstructPreemptCommit(
             cursor->next = gcmPTR_TO_UINT64(cmdLoc);
             cursor = (gcsHAL_COMMAND_LOCATION *)gcmUINT64_TO_PTR(cursor->next);
             cursor->logical = gcmPTR_TO_UINT64(commandBufferLogical);
+
+            gcmkONERROR(_GetPatchList(Kernel->command, cmdLoc));
         }
 
         next = cmdLoc->next;
@@ -342,7 +631,6 @@ gckKERNEL_ConstructPreemptCommit(
         }
 
         userPtr = gcmUINT64_TO_PTR(next);
-        user = (gcsHAL_COMMAND_LOCATION *)userPtr;
     }
     while (userPtr);
 
@@ -401,7 +689,7 @@ gckKERNEL_ConstructPreemptCommit(
 
         if (context && context->maxState > 0)
         {
-            gctUINT bytes = gcmSIZEOF(gctUINT) * context->maxState;
+            gctSIZE_T bytes = gcmSIZEOF(gctUINT) * context->maxState;
             gctUINT32 *kMapEntryID = gcvNULL;
             gctUINT32 *kMapEntryIndex = gcvNULL;
 
@@ -411,7 +699,7 @@ gckKERNEL_ConstructPreemptCommit(
 
             preemptCommit->mapEntryID = (gctUINT32 *)pointer;
 
-            kDelta->mapEntryIDSize = bytes;
+            kDelta->mapEntryIDSize = (gctUINT32)bytes;
 
             gcmkONERROR(gckKERNEL_OpenUserData(
                 Kernel, needCopy,
@@ -615,6 +903,8 @@ gckKERNEL_PreparePreemptEvent(
     gcsQUEUE_PTR uQueue = Queue;
     gcsQUEUE_PTR kQueue = gcvNULL;
     gcsQUEUE_PTR kQueueHead = gcvNULL;
+    gcsQUEUE_PTR record = gcvNULL;
+    gctSIGNAL signal = gcvNULL;
     gcsQUEUE_PTR kQueueTail = gcvNULL;
     gckPREEMPT_COMMIT preemptCommit = gcvNULL;
 
@@ -627,6 +917,8 @@ gckKERNEL_PreparePreemptEvent(
         &pointer));
 
     preemptCommit = (gckPREEMPT_COMMIT)pointer;
+
+    gcmkVERIFY_OK(gckOS_ZeroMemory(preemptCommit, sizeof(gcsPREEMPT_COMMIT)));
 
     gcmkVERIFY_OK(gckOS_QueryNeedCopy(Kernel->os, ProcessID, &needCopy));
 
@@ -698,20 +990,34 @@ gckKERNEL_PreparePreemptEvent(
         }
     }
 
-    preemptCommit->eventQueue  = kQueueHead;
+    preemptCommit->eventQueue = kQueueHead;
+
+    record = preemptCommit->eventQueue;
+
+    while (record != gcvNULL)
+    {
+        signal = gcmUINT64_TO_PTR(record->iface.u.Signal.signal);
+
+        if (record->iface.u.Signal.fenceSignal == gcvTRUE && gcmUINT64_TO_PTR(record->iface.u.Signal.process))
+        {
+            /* User signal. */
+            gcmkONERROR(gckOS_UserSignal(
+                Kernel->os,
+                signal,
+                gcmUINT64_TO_PTR(record->iface.u.Signal.process)
+                ));
+        }
+
+        /* Next record in the queue. */
+        record = gcmUINT64_TO_PTR(record->next);
+    }
+
     preemptCommit->priorityID  = PriorityID;
     preemptCommit->eventOnly   = gcvTRUE;
     preemptCommit->pid         = ProcessID;
     preemptCommit->next        = gcvNULL;
     preemptCommit->isEnd       = gcvFALSE;
     preemptCommit->isNop       = gcvFALSE;
-
-    preemptCommit->cmdLoc        = gcvNULL;
-    preemptCommit->mapEntryID    = gcvNULL;
-    preemptCommit->mapEntryIndex = gcvNULL;
-    preemptCommit->recordArray   = gcvNULL;
-    preemptCommit->delta         = gcvNULL;
-    preemptCommit->context       = gcvNULL;
 
     *PreemptCommit = preemptCommit;
 
@@ -1097,7 +1403,7 @@ gckKERNEL_FullPreemption(
     gcsPRIORITY_QUEUE_PTR queue = gcvNULL;
     gckPREEMPT_COMMIT preemptCommit = gcvNULL;
     gceSTATUS status = gcvSTATUS_OK;
-    gctUINT32 curHighestPriorityID = 0;
+    gctINT32 curHighestPriorityID = 0;
     gctINT id;
 
     for (id = gcdMAX_PRIORITY_QUEUE_NUM - 1; id >= 0; id--)
@@ -1116,6 +1422,7 @@ gckKERNEL_FullPreemption(
             gcmkVERIFY_OK(gckOS_AtomGet(Kernel->os, Kernel->device->atomPriorityID, &curHighestPriorityID));
             if (id < curHighestPriorityID)
             {
+
                 gcmkONERROR(gckOS_ReleaseMutex(Kernel->os, Kernel->priorityQueueMutex[id]));
                 return gcvSTATUS_OK;
             }
@@ -1136,7 +1443,10 @@ gckKERNEL_FullPreemption(
                             gcmkONERROR(gckCONTEXT_DestroyPrevDelta(preemptCommit->context));
                         }
 
-                        gcmkONERROR(gckCONTEXT_UpdateDelta(preemptCommit->context, preemptCommit->delta));
+                        if (preemptCommit->delta)
+                        {
+                            gcmkONERROR(gckCONTEXT_UpdateDelta(preemptCommit->context, preemptCommit->delta));
+                        }
                     }
 
                     status = gckCOMMAND_PreemptCommit(Kernel->command, preemptCommit);
@@ -1170,7 +1480,11 @@ gckKERNEL_FullPreemption(
         gcmkONERROR(gckOS_ReleaseMutex(Kernel->os, Kernel->priorityQueueMutex[id]));
     }
 
+    return gcvSTATUS_OK;
+
 OnError:
+    gcmkONERROR(gckOS_ReleaseMutex(Kernel->os, Kernel->priorityQueueMutex[id]));
+
     return status;
 }
 
@@ -1253,8 +1567,9 @@ gckKERNEL_CommandCommitPreemption(
     if (Kernel->preemptionMode == gcvFULLY_PREEMPTIBLE_MODE)
     {
         Commit->needMerge = gcvTRUE;
+        Commit->pending   = gcvFALSE;
 
-        gcmkVERIFY_OK(gckOS_AtomGet(Kernel->os, Kernel->device->atomPriorityID, &curHighestPriorityID));
+        gcmkVERIFY_OK(gckOS_AtomGet(Kernel->os, Kernel->device->atomPriorityID, (gctINT32_PTR)&curHighestPriorityID));
 
         if (SubCommit->topPriority && priorityID != curHighestPriorityID)
         {
@@ -1276,7 +1591,6 @@ gckKERNEL_CommandCommitPreemption(
             (priorityID == curHighestPriorityID && Kernel->priorityQueues[priorityID]
             && Kernel->priorityQueues[priorityID]->head))
         {
-
             gcmkONERROR(
                 gckKERNEL_ConstructPreemptCommit(Kernel,
                                                  SubCommit,
@@ -1292,6 +1606,7 @@ gckKERNEL_CommandCommitPreemption(
 
             Commit->commitStamp = Command->commitStamp++;
             Commit->needMerge = gcvFALSE;
+            Commit->pending   = gcvTRUE;
 
             if (priorityID == curHighestPriorityID)
             {
@@ -1300,7 +1615,19 @@ gckKERNEL_CommandCommitPreemption(
         }
         else
         {
+            gctUINT32 prevHighestPriorityID = curHighestPriorityID;
+
             gcmkVERIFY_OK(gckOS_AtomSet(Kernel->os, Kernel->device->atomPriorityID, priorityID));
+
+            if (Command->feType == gcvHW_FE_MULTI_CHANNEL
+                && priorityID > prevHighestPriorityID)
+            {
+                gckCOMMAND_Stall(Kernel->command, gcvFALSE);
+            }
+            else
+            {
+                (void)prevHighestPriorityID;
+            }
 
             status = gckCOMMAND_Commit(Command,
                                        SubCommit,
@@ -1355,9 +1682,9 @@ OnError:
 
 /*******************************************************************************
 **
-**  gckKERNEL_CommandCommitPreemption
+**  gckKERNEL_EventCommitPreemption
 **
-**  Commit the command with preemption.
+**  Commit the event with preemption.
 **
 **  INPUT:
 **
@@ -1403,7 +1730,7 @@ gckKERNEL_EventCommitPreemption(
 
     if (Kernel->preemptionMode == gcvFULLY_PREEMPTIBLE_MODE)
     {
-        gcmkVERIFY_OK(gckOS_AtomGet(Kernel->os, Kernel->device->atomPriorityID, &curHighestPriorityID));
+        gcmkVERIFY_OK(gckOS_AtomGet(Kernel->os, Kernel->device->atomPriorityID, (gctINT32_PTR)&curHighestPriorityID));
 
         if (TopPriority && priorityID != curHighestPriorityID)
         {

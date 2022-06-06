@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -2314,6 +2314,14 @@ _FuncRelease(
     for (i = 0; i < Execution->funcCmdCount; i++)
     {
         command = &Execution->funcCmd[i];
+        /*free golden*/
+#if gcdFLOP_RESET_DEBUG
+        if(command->golden)
+        {
+            gcmkVERIFY_OK(gckOS_Free(hardware->os, (gctPOINTER)command->golden));
+            command->golden = gcvNULL;
+        }
+#endif
 
         /* Free data buffers. */
         if (command->data)
@@ -2410,6 +2418,65 @@ _FuncExecute(IN gcsFUNCTION_EXECUTION_PTR Execution)
     return gckHARDWARE_ExecuteFunctions(Execution);
 }
 
+#if gcdFLOP_RESET
+static gceSTATUS
+_FuncExecute_FLOPRESET(IN gcsFUNCTION_EXECUTION_PTR Execution)
+{
+#if gcdENABLE_FLOP_RESET_DEBUG
+    gctUINT32 i=0, j=0, minus_flag = 0;
+#endif
+
+    gceSTATUS status = gckHARDWARE_ExecuteFunctions(Execution);
+
+#if gcdENABLE_FLOP_RESET_DEBUG && gcdFLOP_RESET_PPU
+    minus_flag += 1;
+#endif
+
+
+#if gcdENABLE_FLOP_RESET_DEBUG
+    for (i  = 0; i < Execution->funcCmdCount - minus_flag; i++)
+    {
+        gcmkPRINT("outSizeBytes is : %d", Execution->funcCmd[i].outSize);
+        gcmkPRINT("outAddress is %x", Execution->funcCmd[i].data[2].address);
+        for(j = 0; j < Execution->funcCmd[i].outSize; j++ )
+        {
+            if(((gctUINT8_PTR)(Execution->funcCmd[i].golden))[j] != ((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[j])
+            {
+                if(i == 0)
+                {
+                    gcmkPRINT("top 2 outputBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[1]);
+                    gcmkPRINT("top 2 goldenBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].golden))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].golden))[1]);
+                    gcmkPRINT("NN workaround verify failed!");
+                    return status;
+                }
+                else if(i == 1)
+                {
+                    gcmkPRINT("top 2 outputBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[1]);
+                    gcmkPRINT("top 2 goldenBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].golden))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].golden))[1]);
+                    gcmkPRINT("TP workaround verify failed!");
+                    return status;
+                }
+            }
+        }
+        if(i == 0)
+        {
+            gcmkPRINT("top 2 outputBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[1]);
+            gcmkPRINT("top 2 goldenBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].golden))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].golden))[1]);
+            gcmkPRINT("NN workaround verify success!");
+        }
+        else
+        {
+            gcmkPRINT("top 2 outputBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].outlogical))[1]);
+            gcmkPRINT("top 2 goldenBytes: %x, %x",((gctUINT8_PTR)(Execution->funcCmd[i].golden))[0], ((gctUINT8_PTR)(Execution->funcCmd[i].golden))[1]);
+            gcmkPRINT("TP workaround verify success!");
+        }
+    }
+#endif
+
+    return status;
+}
+#endif
+
 static gceSTATUS
 _FuncValidate_MMU(IN gcsFUNCTION_EXECUTION_PTR Execution)
 {
@@ -2467,6 +2534,7 @@ _FuncRelease_MMU(IN gcsFUNCTION_EXECUTION_PTR Execution)
     return gcvSTATUS_OK;
 }
 
+
 static gceSTATUS
 _ProgramMMUStates(
     IN gckHARDWARE Hardware,
@@ -2483,7 +2551,6 @@ _ProgramMMUStates(
     gctUINT32_PTR buffer;
     gctBOOL ace;
     gctUINT32 reserveBytes = 0;
-
     gctBOOL config2D;
 
     gcmkHEADER_ARG("Hardware=0x%x", Hardware);
@@ -2658,7 +2725,7 @@ _ProgramMMUStates(
             gcmkDUMP(Mmu->os, "@[physical.fill 0x%010llX 0x%08X 0x%08X]",
                      (unsigned long long)Hardware->pagetableArray.address + 4, entry->high, 4);
 
-            gcmkVERIFY_OK(gckVIDMEM_NODE_CleanCache(
+            gcmkONERROR(gckVIDMEM_NODE_CleanCache(
                 Hardware->kernel,
                 Hardware->pagetableArray.videoMem,
                 0,
@@ -2876,7 +2943,27 @@ _ProgramMMUStates(
  16:16))) | (((gctUINT32) ((gctUINT32) (1) & ((gctUINT32) ((((1 ?
  16:16) - (0 ?
  16:16) + 1) == 32) ?
- ~0U : (~(~0U << ((1 ? 16:16) - (0 ? 16:16) + 1))))))) << (0 ? 16:16)));
+ ~0U : (~(~0U << ((1 ? 16:16) - (0 ? 16:16) + 1))))))) << (0 ? 16:16))) |
+              ((((gctUINT32) (0)) & ~(((gctUINT32) (((gctUINT32) ((((1 ?
+ 19:19) - (0 ?
+ 19:19) + 1) == 32) ?
+ ~0U : (~(~0U << ((1 ?
+ 19:19) - (0 ?
+ 19:19) + 1))))))) << (0 ?
+ 19:19))) | (((gctUINT32) ((gctUINT32) (1) & ((gctUINT32) ((((1 ?
+ 19:19) - (0 ?
+ 19:19) + 1) == 32) ?
+ ~0U : (~(~0U << ((1 ? 19:19) - (0 ? 19:19) + 1))))))) << (0 ? 19:19))) |
+              ((((gctUINT32) (0)) & ~(((gctUINT32) (((gctUINT32) ((((1 ?
+ 22:22) - (0 ?
+ 22:22) + 1) == 32) ?
+ ~0U : (~(~0U << ((1 ?
+ 22:22) - (0 ?
+ 22:22) + 1))))))) << (0 ?
+ 22:22))) | (((gctUINT32) ((gctUINT32) (1) & ((gctUINT32) ((((1 ?
+ 22:22) - (0 ?
+ 22:22) + 1) == 32) ?
+ ~0U : (~(~0U << ((1 ? 22:22) - (0 ? 22:22) + 1))))))) << (0 ? 22:22)));
 
         do{*buffer++ = ((((gctUINT32) (0)) & ~(((gctUINT32) (((gctUINT32) ((((1 ?
  31:27) - (0 ?
@@ -3508,7 +3595,7 @@ _ProgramMMUStatesMCFE(
             gcmkDUMP(Mmu->os, "@[physical.fill 0x%010llX 0x%08X 0x%08X]",
                      (unsigned long long)Hardware->pagetableArray.address + 4, entry->high, 4);
 
-            gcmkVERIFY_OK(gckVIDMEM_NODE_CleanCache(
+            gcmkONERROR(gckVIDMEM_NODE_CleanCache(
                 Hardware->kernel,
                 Hardware->pagetableArray.videoMem,
                 0,
@@ -3766,10 +3853,14 @@ _FuncInit_MMU(IN gcsFUNCTION_EXECUTION_PTR Execution)
     mode = gcvMMU_MODE_4K;
 #endif
 
+#if defined(CONFIG_ZONE_DMA32) || defined(CONFIG_ZONE_DMA)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
     if (!gckHARDWARE_IsFeatureAvailable(hardware, gcvFEATURE_MMU_PAGE_DESCRIPTOR))
     {
-        flags |= gcvALLOC_FLAG_4GB_ADDR;
+        flags |= gcvALLOC_FLAG_4GB_ADDR | gcvALLOC_FLAG_4K_PAGES;
     }
+#endif
+#endif
 
 #if gcdENABLE_CACHEABLE_COMMAND_BUFFER
     flags |= gcvALLOC_FLAG_CACHEABLE;
@@ -4045,7 +4136,7 @@ _FuncExecute_MMU_CMD(IN gcsFUNCTION_EXECUTION_PTR Execution)
     gceSTATUS status = gcvSTATUS_OK;
     gctUINT32 address = 0;
     gctUINT32 idle;
-    gctUINT32 timer = 0, delay = 1;
+    gctUINT32 timer = 0, delay = 10;
     gckHARDWARE hardware = (gckHARDWARE)Execution->hardware;
     gckMMU mmu = hardware->kernel->mmu;
     gctUINT32_PTR endLogical = (gctUINT32_PTR)Execution->funcCmd[0].endLogical;
@@ -4234,7 +4325,7 @@ _FuncExecute_MMU_CMD(IN gcsFUNCTION_EXECUTION_PTR Execution)
     /* Wait until MMU configure finishes. */
     do
     {
-        gckOS_Delay(hardware->os, delay);
+        gckOS_Udelay(hardware->os, delay);
 
         gcmkONERROR(gckOS_ReadRegisterEx(
             hardware->os,
@@ -4426,6 +4517,7 @@ _FuncInit_Flush(IN gcsFUNCTION_EXECUTION_PTR Execution)
     Execution->funcCmd = (gcsFUNCTION_COMMAND_PTR)pointer;
 
     Execution->funcCmd[0].funcVidMemBytes = 1024;
+    Execution->funcCmd[0].channelId = 0;
     /* Allocate video memory node for aux functions. */
     gcmkONERROR(gckKERNEL_AllocateVideoMemory(
                 hardware->kernel,
@@ -4509,9 +4601,32 @@ _FuncValidate_FlopReset(
     {
         Execution->valid = gcvTRUE;
     }
+    if(hardware->identity.customerID == 0x15)
+    {
+        Execution->valid = gcvTRUE;
+    }
 #endif
 
     return status;
+}
+
+gceSTATUS gckFUNCTION_CheckCHIPID(
+    IN gcsFUNCTION_EXECUTION_PTR Execution
+    )
+{
+    gckHARDWARE hardware = (gckHARDWARE)Execution->hardware;
+    if((hardware->identity.customerID == 0xb5) || (hardware->identity.customerID == 0x9f) || (hardware->identity.customerID == 0x7d) || (hardware->identity.customerID == 0x99) ||
+        (hardware->identity.customerID == 0xa1) || (hardware->identity.customerID == 0x88) || (hardware->identity.customerID == 0x98) || (hardware->identity.customerID == 0x92) ||
+        (hardware->identity.customerID == 0xa3) || (hardware->identity.customerID == 0xa9) ||(hardware->identity.customerID == 0x97) || (hardware->identity.customerID == 0x82) ||
+        (hardware->identity.customerID == 0x84) || (hardware->identity.customerID == 0x9) || (hardware->identity.customerID == 0xa0) || (hardware->identity.customerID == 0xa5) ||
+        (hardware->identity.customerID == 0x23) || (hardware->identity.customerID == 0xb3) || (hardware->identity.customerID == 0x96) || (hardware->identity.customerID == 0x86) ||
+        (hardware->identity.customerID == 0x83) || (hardware->identity.customerID == 0x7f) || (hardware->identity.customerID == 0x80) || (hardware->identity.customerID == 0x15) ||
+        (hardware->identity.customerID == 0x85)
+    )
+    {
+        return gcvSTATUS_TRUE;
+    }
+    return gcvSTATUS_FALSE;
 }
 
 static gceSTATUS
@@ -4532,14 +4647,8 @@ _FuncInit_FlopReset(
 
     Execution->funcCmdCount = 0;
 
-#if gcdFLOP_RESET_PPU
-    /* PPU is always there. */
-    doPPU = gcvTRUE;
-    Execution->funcCmdCount++;
-#endif
-
 #if gcdFLOP_RESET_NN
-    if (gckHARDWARE_IsFeatureAvailable(hardware, gcvFEATURE_NN_ENGINE) && (hardware->identity.customerID == 0x9f))
+    if ((gckHARDWARE_IsFeatureAvailable(hardware, gcvFEATURE_NN_ENGINE) && (hardware->identity.customerID == 0x9f)) || gckFUNCTION_CheckCHIPID(Execution))
     {
         doNN = gcvTRUE;
         Execution->funcCmdCount++;
@@ -4547,11 +4656,16 @@ _FuncInit_FlopReset(
 #endif
 
 #if gcdFLOP_RESET_TP
-    if (gckHARDWARE_IsFeatureAvailable(hardware, gcvFEATURE_TP_ENGINE) && (hardware->identity.customerID == 0x9f))
+    if ((gckHARDWARE_IsFeatureAvailable(hardware, gcvFEATURE_TP_ENGINE) && (hardware->identity.customerID == 0x9f)) || gckFUNCTION_CheckCHIPID(Execution))
     {
         doTP = gcvTRUE;
         Execution->funcCmdCount++;
     }
+#endif
+
+#if gcdFLOP_RESET_PPU
+    doPPU = gcvTRUE;
+    Execution->funcCmdCount++;
 #endif
 
     if (!Execution->funcCmdCount)
@@ -4584,16 +4698,6 @@ _FuncInit_FlopReset(
     allocFlag = gcvALLOC_FLAG_CACHEABLE;
 #endif
 
-    if (doPPU)
-    {
-        gcmkONERROR(gckHARDWARE_ResetFlopWithPPU(
-            hardware,
-            allocFlag,
-            &pool,
-            &Execution->funcCmd[index++]
-            ));
-    }
-
     if (doNN)
     {
         gcmkONERROR(gckHARDWARE_ResetFlopWithNN(
@@ -4607,6 +4711,16 @@ _FuncInit_FlopReset(
     if (doTP)
     {
         gcmkONERROR(gckHARDWARE_ResetFlopWithTP(
+            hardware,
+            allocFlag,
+            &pool,
+            &Execution->funcCmd[index++]
+            ));
+    }
+
+    if (doPPU)
+    {
+        gcmkONERROR(gckHARDWARE_ResetFlopWithPPU(
             hardware,
             allocFlag,
             &pool,
@@ -11105,7 +11219,7 @@ gceSTATUS gckFUNCTION_Construct(IN         gctPOINTER Hardware)
             gckOS_MemCopy(func->funcName, "flop reset", 11);
             func->funcExecution.init = _FuncInit_FlopReset;
             func->funcExecution.validate = _FuncValidate_FlopReset;
-            func->funcExecution.execute = _FuncExecute;
+            func->funcExecution.execute = _FuncExecute_FLOPRESET;
             func->funcExecution.release = _FuncRelease;
             break;
 #else
@@ -11244,19 +11358,7 @@ gceSTATUS gckFUNCTION_Execute(IN gcsFUNCTION_EXECUTION_PTR Execution)
 
     if (Execution->inited && Execution->funcExecution.execute)
     {
-        gckHARDWARE hardware = (gckHARDWARE)Execution->hardware;
-
-        if (hardware->options.powerManagement && hardware->hasQchannel)
-        {
-            gcmkONERROR(gckHARDWARE_QchannelBypass(hardware, gcvTRUE));
-        }
-
         gcmkONERROR(Execution->funcExecution.execute(Execution));
-
-        if (hardware->options.powerManagement && hardware->hasQchannel)
-        {
-            gcmkONERROR(gckHARDWARE_QchannelBypass(hardware, gcvFALSE));
-        }
     }
     else
     {

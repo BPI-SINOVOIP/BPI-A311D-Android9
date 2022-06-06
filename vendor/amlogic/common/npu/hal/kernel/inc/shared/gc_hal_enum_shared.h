@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -259,6 +259,7 @@ typedef enum _gceFEATURE
     gcvFEATURE_2D_10BIT_OUTPUT_LINEAR,
     gcvFEATURE_2D_YUV420_OUTPUT_LINEAR,
     gcvFEATURE_ACE,
+    gcvFEATURE_NO_YUV420_SOURCE,/* unsupported source with three planes */
     gcvFEATURE_COLOR_COMPRESSION,
     gcvFEATURE_32BPP_COMPONENT_TEXTURE_CHANNEL_SWIZZLE,
     gcvFEATURE_64BPP_HW_CLEAR_SUPPORT,
@@ -648,6 +649,20 @@ typedef enum _gceFEATURE
     gcvFEATURE_PE_A8B8G8R8, /* For PE support A8B8G8R8 format feature*/
     gcvFEATURE_DEPTHWISE_NEIGHBOR_IMG_DATA_TRANSFER_NOT_EFFICIENT_FIX,
 
+    /* FP16 enhancement-related features. */
+    gcvFEATURE_DST_TEX_I2F_F2I_INST_DEPRECATE,
+    gcvFEATURE_ALU_FP16_INST_SUPPORT,
+    gcvFEATURE_DUAL16_14BIT_PC_SUPPORT,
+    gcvFEATURE_LDST_CONV_4ROUNDING_MODES,
+    gcvFEATURE_FULL_PACK_MODE_SUPPORT,
+    gcvFEATURE_FP32_TO_FP16_CONV_FIX,
+
+    gcvFEATURE_SH_HAS_IMGLD_COMP_COUNT_FIX,
+    gcvFEATURE_SH_SUPPORT_FP32_FMA,
+
+    gcvFEATURE_SH_SUPPORT_VEC2_INT_MULMAD,
+    gcvFEATURE_SH_SUPPORT_VEC4_INT_MULMAD,
+
     /* AIGPU feature. */
     gcvFEATURE_AI_GPU,
     gcvFEATURE_NN_FAST_FIRST_PIXEL_POOLING,
@@ -655,6 +670,7 @@ typedef enum _gceFEATURE
     gcvFEATURE_NN_ASYMMETRIC_INT8,
 
     gcvFEATURE_FORMAT_YUV_I010, /*support YUVI010 & P010_LSB format*/
+    gcvFEATURE_FORMAT_YUV420_101010, /*support YUV420_101010 format*/
 
     gcFEATURE_BIT_NN_COMPRESSION_BYPASSS,
     gcFEATURE_BIT_BFLOAT_COEF_COMPRESSION_ZERO_COEFBIT14_INVERSE,
@@ -688,16 +704,66 @@ typedef enum _gceFEATURE
 
     /* TP reorder the int tile x should be less than 512 */
     gcFEATURE_TP_REORDER_INTILE_X_SIZE_512_FIX,
-    gcFEATURE_NN_WASET_COEF_READ_WRITE_BANDWIDTH_128BYTE_VIPSRAM_IN_FULL_PATIAL_CACHE_MODE,
+    gcFEATURE_NN_WASTE_COEF_READ_WRITE_BANDWIDTH_128BYTE_VIPSRAM_IN_FULL_PATIAL_CACHE_MODE_FIX,
     gcFEATURE_BIT_BFP_COEF_AUTO_PAD_INCOMPLETE_ZERO_IN_KZ_PLANE,
     gcvFEATURE_NN_FLOAT32_IO,
     gcvFEATURE_TP_FLOAT32_IO,
+    /* add for support INT16x(U)INT8 */
+    gcFEATURE_BIT_NN_23BITS_POST_MULTIPLIER_VIP_V7,
+    gcFEATURE_BIT_TP_23BITS_POST_MULTIPLIER_VIP_V7,
+    gcvFEATURE_CONV_INT16X8BIT_VIP_V7,
 
     /* Q channel support. */
     gcvFEATURE_Q_CHANNEL_SUPPORT,
 
     /* MMU descriptor new refinement. */
     gcvFEATURE_MMU_PAGE_DESCRIPTOR,
+
+    gcvFEATURE_BIT_NN_TILE_NUM_BIGGER_THAN_1024_FIX,
+
+    gcvFEATURE_BIT_HI1_L2_CACHE,
+
+    gcFEATURE_BIT_NN_SUPPORT_CONV_1D,
+
+    gcFEATURE_BIT_NN_DEPTHWISE_AFTER_16BIT_LAYER_LIMIT_FIX,
+
+    /* support gcvSURF_B8G8R8_PLANAR & gcvSURF_AYUV format */
+    gcFEATURE_BIT_BGR_PLANAR,
+
+    gcvFEATURE_BIT_USC_INDIVIDUAL_PORT_WRT_EARLY_EVICT_DATA_CORRUPT_FIX,
+    gcvFEATURE_BIT_NN_TP_INSTR_COMPLETE_IN_SAME_CYCLE_WITH_WAIT_EVENT_FIX,
+
+    gcFEATURE_BIT_TP_SOFTMAX,
+    gcvFEATURE_TP_TENSOR_ADD_MUL,
+
+    gcvFEATURE_NN_REMOVE_POOLING,
+    gcvFEATURE_BIT_NN_DEPTHWISE_INT16XINT8,
+    gcvFEATURE_BIT_NN_DEPTHWISE_8BIT_VIP_V7,
+    gcFEATURE_BIT_NN_ZDP_TRANSPOSE_CH9_ONLY,
+    gcFEATURE_BIT_NN_SUPPORT_DUMMY_TILE,
+    gcFEATURE_BIT_USE_VIPSRAM_FOR_KERNEL_STREAMING,
+    gcFEATURE_BIT_NN_SUPPORT_KERNEL_1BYTE_ALIGN,
+    gcFEATURE_BIT_NN_SMALL_BATCH_PHASE2,
+    gcvFEATURE_SH_MOVAI_MOVAR_UNUSED_COMPONENTS_WRITE_DIRTY_DATA_FIX,
+    gcFEATURE_BIT_NN_ENHANCED_MAX_POOLING,
+    gcvFEATURE_NN_1x1_NON_POOLING_PACKING,
+    gcFEATURE_BIT_NN_SUPPORT_BOTH_CONV_NATIVE_STRIDE2_AND_POOLING,
+    gcFEATURE_BIT_NN_SUPPORT_ALU,
+    gcvFEATURE_BIT_NN_TRANSPOSE_PHASE2,
+    gcvFEATURE_BIT_NN_FC_ENHANCEMENT,
+    gcFEATURE_BIT_NN_2ND_IMG_BASE_ADDR_FIX,
+    gcFEATURE_BIT_NN_TENSOR_ADD_FIELD_MOVE_TO_EXT_CMD,
+
+    gcvFEATURE_IMGLD_WIDTH_LT16_FIX,
+    gcvFEATURE_BIT_GPU_INSPECTOR_COUNTERS,
+
+    gcvFEATURE_VIP_REMOVE_MMU,
+    gcFEATURE_BIT_TPLITE_SUPPORT_TP_DATA_TRANSPOSE,
+    gcvFEATURE_BIT_NN_JD_DIRECT_MODE_FIX,
+    gcFEATURE_BIT_NN_CONV_CORE_BYPASS,
+    gcvFEATURE_BIT_TP_REMOVE_FC,
+
+    gcvFEATURE_BIT_HI_DEFAULT_ENABLE_REORDER_FIX,
 
     /* Insert features above this comment only. */
     gcvFEATURE_COUNT                /* Not a feature. */
@@ -783,6 +849,7 @@ typedef enum _gceSURF_TYPE
     gcvSURF_3D                      = 0x200000, /* It's 3d surface */
     gcvSURF_DMABUF_EXPORTABLE       = 0x400000, /* master node can be exported as dma-buf fd */
     gcvSURF_CACHE_MODE_128          = 0x800000,
+    gcvSURF_TILED                   = 0x1000000, /* force create tile buffer, as we will convert it to supertile according to related hardware feature by default */
 
     gcvSURF_TEXTURE_LINEAR               = gcvSURF_TEXTURE
                                          | gcvSURF_LINEAR,
@@ -900,6 +967,7 @@ typedef enum _gceSURF_FORMAT
     gcvSURF_X8B8G8R8_SNORM,
     gcvSURF_A8B8G8R8_SNORM,
     gcvSURF_A8B12G12R12_2_A8R8G8B8,
+    gcvSURF_B8G8R8_PLANAR,
 
     /* Compressed formats. */
     gcvSURF_DXT1                = 400,
@@ -942,6 +1010,7 @@ typedef enum _gceSURF_FORMAT
     gcvSURF_P010,
     gcvSURF_P010_LSB,
     gcvSURF_I010,
+    gcvSURF_YUV420_101010,
 #if gcdVG_ONLY
     gcvSURF_AYUY2,
     gcvSURF_ANV12,
@@ -1396,6 +1465,7 @@ typedef enum _gceCORE
 #if gcdDEC_ENABLE_AHB
     gcvCORE_DEC,
 #endif
+    gcvCORE_2D1,
     gcvCORE_COUNT
 }
 gceCORE;
@@ -1558,6 +1628,7 @@ typedef enum _gceSTATUS
     gcvSTATUS_NOT_MULTI_PIPE_ALIGNED =   -28,
     gcvSTATUS_OUT_OF_SAMPLER         =   -29,
     gcvSTATUS_PROBE_LATER           =   -30,
+    gcvSTATUS_RESLUT_OVERFLOW       =   -31,
 
     /* Linker errors. */
     gcvSTATUS_GLOBAL_TYPE_MISMATCH              =   -1000,
@@ -1759,7 +1830,10 @@ typedef enum _gceHAL_COMMAND_CODES
     /*************** OS specific end ***************/
 
     /*************** Reserved ***************/
-    gcvHAL_SET_IDLE,
+    /* Access APB register. */
+    gcvHAL_APB_AXIFE_ACCESS,
+
+    /* Trigger a software reset. */
     gcvHAL_RESET,
 
     /* Command commit done, kernel event only. */
@@ -1782,9 +1856,13 @@ typedef enum _gceHAL_COMMAND_CODES
     /* Set debug level. */
     gcvHAL_SET_DEBUG_LEVEL_ZONE,
 
-    /* Dump info. */
+    /* Dump HW register state. */
     gcvHAL_DUMP_GPU_STATE,
-    gcvHAL_DUMP_EVENT,
+
+    /* Sync video memory for special memory pool */
+    gcvHAL_SYNC_VIDEO_MEMORY,
+
+    /* Dump profiler. */
     gcvHAL_DUMP_GPU_PROFILE,
 
     /* Timer. */
@@ -1797,8 +1875,6 @@ typedef enum _gceHAL_COMMAND_CODES
     /* Destory MMU. */
     gcvHAL_DESTROY_MMU,
 
-    /* sync video memory for special memory pool */
-    gcvHAL_SYNC_VIDEO_MEMORY,
     /*************** Reserved end ***************/
 }
 gceHAL_COMMAND_CODES;
@@ -1919,6 +1995,16 @@ typedef enum _gceDUMP_BUFFER_TYPE
 }
 gceDUMP_BUFFER_TYPE;
 
+typedef enum _gceLOCK_VIDEO_MEMORY_OP
+{
+    gcvLOCK_VIDEO_MEMORY_OP_NONE = 0x00,
+    gcvLOCK_VIDEO_MEMORY_OP_LOCK = 0x01,
+    gcvLOCK_VIDEO_MEMORY_OP_MAP = 0x02,
+    gcvLOCK_VIDEO_MEMORY_OP_UNLOCK = 0x04,
+    gcvLOCK_VIDEO_MEMORY_OP_UNMAP = 0x08,
+}
+gceLOCK_VIDEO_MEMORY_OP;
+
 typedef enum _gceSYNC_VIDEO_MEMORY_REASON
 {
     gcvSYNC_REASON_NONE = 0,
@@ -1926,6 +2012,37 @@ typedef enum _gceSYNC_VIDEO_MEMORY_REASON
     gcvSYNC_REASON_AFTER_WRITE,
 }
 gceSYNC_VIDEO_MEMORY_REASON;
+
+typedef enum _gceProfilerMode
+{
+    gcvPROFILER_UNKNOWN_MODE = 0,
+    gcvPROFILER_PROBE_MODE,
+    gcvPROFILER_AHB_MODE,
+}
+gceProfilerMode;
+
+typedef enum _gceProbeMode
+{
+    gcvPROFILER_UNKNOWN_PROBE = 0,
+    gcvPROFILER_GPU_PROBE,
+    gcvPROFILER_VIP_PROBE,
+}
+gceProbeMode;
+
+typedef enum _gceMULTI_PROCESSOR_MODE
+{
+    gcvMP_MODE_COMBINED    = 0,
+    gcvMP_MODE_INDEPENDENT = 1
+}
+gceMULTI_PROCESSOR_MODE;
+
+typedef enum _gceSwitchMpMode
+{
+    gcvMP_MODE_NO_SWITCH = 0,
+    gcvMP_MODE_SWITCH_TO_SINGLE,
+    gcvMP_MODE_SWITCH_TO_MULTI,
+}
+gceSwitchMpMode;
 
 #ifdef __cplusplus
 }

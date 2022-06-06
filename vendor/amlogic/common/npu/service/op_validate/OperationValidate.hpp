@@ -37,6 +37,10 @@ namespace android {
 namespace nn {
 namespace op_validate {
 using HalPlatform = vsi_driver::HalPlatform;
+using OperationType = vsi_driver::OperationType;
+using OperandType = vsi_driver::OperandType;
+using OperandLifeTime = vsi_driver::OperandLifeTime;
+
 namespace get_buffer {
 const uint8_t* getOperandDataPtr(const HalPlatform::Model& model,
                                  const HalPlatform::Operand& halOperand,
@@ -50,7 +54,7 @@ const uint8_t* getOperandDataPtr(const HalPlatform::Model& model,
     return nullptr;
 }
 
-const uint8_t* getOpeandPtr(const HalPlatform::Model& model,
+const uint8_t* getOperandPtr(const HalPlatform::Model& model,
                             const HalPlatform::Operand& operand,
                             struct vsi_driver::VsiRTInfo& rt) {
     auto& location = operand.location;
@@ -65,11 +69,27 @@ const uint8_t* getOpeandPtr(const HalPlatform::Model& model,
 template <typename T_type>
 T_type getScalarData(const HalPlatform::Model& model, const HalPlatform::Operand& operand) {
     struct vsi_driver::VsiRTInfo rt;
-    auto ptr = getOpeandPtr(model, operand, rt);
+    auto ptr = getOperandPtr(model, operand, rt);
     if (ptr)
         return *reinterpret_cast<T_type*>(const_cast<uint8_t*>(ptr));
     else
         return 0;
+}
+
+const HalPlatform::Operand& getOpeand(const HalPlatform::Model& model,
+                            const uint32_t index) {
+#if ANDROID_SDK_VERSION < 30
+    if(index > model.operands.size()){
+        LOG(ERROR)<< index << "is out of operands size :" << model.operands.size();
+        assert(0);
+    }
+#elif ANDROID_SDK_VERSION >= 30
+    if(index > model.main.operands.size()){
+        LOG(ERROR)<< index << "is out of operands size :" << model.main.operands.size();
+        assert(0);
+    }
+#endif
+    return vsi_driver::GetHalOperand(model, index);
 }
 }  // end of get_buffer
 
@@ -80,14 +100,14 @@ class OperationValidate {
         : m_Model(model), m_Operation(operation) {
         // GenInputArgTypes
         for (auto inIdx : m_Operation.inputs) {
-            m_InputArgTypes.push_back(MapToNnrtOperandType(m_Model.operands[inIdx].type));
+            m_InputArgTypes.push_back(MapToNnrtOperandType(vsi_driver::GetHalOperand(m_Model, inIdx).type));
         }
         // GenOutputArgTypes
         // push first input into output argtypes
         m_OutputArgTypes.push_back(
-            MapToNnrtOperandType(m_Model.operands[m_Operation.inputs[0]].type));
+            MapToNnrtOperandType(vsi_driver::GetHalOperand(m_Model, m_Operation.inputs[0]).type));
         for (auto outIdx : m_Operation.outputs) {
-            m_OutputArgTypes.push_back(MapToNnrtOperandType(m_Model.operands[outIdx].type));
+            m_OutputArgTypes.push_back(MapToNnrtOperandType(vsi_driver::GetHalOperand(m_Model, outIdx).type));
         }
     };
     virtual ~OperationValidate(){};
@@ -97,6 +117,26 @@ class OperationValidate {
                          ShareOperandCheck(reason) && SignatureCheck(reason);
         return isSupport;
     };
+
+    const std::vector<nnrt::OperandType>& InputArgTypes() const { return m_InputArgTypes; }
+    const std::vector<nnrt::OperandType>& OutputArgTypes() const { return m_OutputArgTypes; }
+    const T_Model& ModelForRead() const { return m_Model; }
+    const T_Operation& OperationForRead() const { return m_Operation; }
+
+    bool IsConstantTensor(size_t index) {
+        auto& operand = vsi_driver::GetHalOperand(m_Model, index);
+        return operand.lifetime == OperandLifeTime::CONSTANT_COPY ||
+               operand.lifetime == OperandLifeTime::CONSTANT_REFERENCE;
+    }
+
+    bool IsInput(size_t index) {
+        auto& operand =vsi_driver::GetHalOperand(m_Model, index);
+#if ANDROID_SDK_VERSION < 30
+        return operand.lifetime == OperandLifeTime::MODEL_INPUT;
+#elif ANDROID_SDK_VERSION >=30
+        return operand.lifetime == OperandLifeTime::SUBGRAPH_INPUT;
+#endif
+    }
 
    protected:
     // Default implementation
@@ -122,8 +162,8 @@ class OperationValidate {
         // Check inputs
         if (0 == m_Operation.inputs.size()) return false;
         for (auto inIdx : m_Operation.inputs) {
-            auto& dims = m_Model.operands[inIdx].dimensions;
-            if (IsTensor(m_Model.operands[inIdx]) && dims.size() == 0) {
+            auto& dims = vsi_driver::GetHalOperand(m_Model, inIdx).dimensions;
+            if (IsTensor(vsi_driver::GetHalOperand(m_Model, inIdx)) && dims.size() == 0) {
                 reason += "reject op because its input tensor rank == 0\n";
                 return false;
             }
@@ -140,8 +180,8 @@ class OperationValidate {
         // Check outputs
         if (0 == m_Operation.outputs.size()) return false;
         for (auto outIdx : m_Operation.outputs) {
-            auto& dims = m_Model.operands[outIdx].dimensions;
-            if (IsTensor(m_Model.operands[outIdx]) && dims.size() == 0) {
+            auto& dims = vsi_driver::GetHalOperand(m_Model, outIdx).dimensions;
+            if (IsTensor(vsi_driver::GetHalOperand(m_Model, outIdx)) && dims.size() == 0) {
                 reason += "reject op because its output tensor rank == 0\n";
                 return false;
             }
@@ -179,12 +219,6 @@ class OperationValidate {
         return true;
     }
 
-    bool IsConstantTensor(size_t index) {
-        auto& operand = m_Model.operands[index];
-        return operand.lifetime == OperandLifeTime::CONSTANT_COPY ||
-               operand.lifetime == OperandLifeTime::CONSTANT_REFERENCE;
-    }
-
     bool ConstantTensorCheck(std::string& reason) {
         std::vector<OperationType> whiteList = {OperationType::ADD,
                                                 OperationType::SUB,
@@ -207,16 +241,10 @@ class OperationValidate {
         return true;
     }
 
-    const T_Model ModelForRead() const { return m_Model; }
     T_Model ModelForWrite() { return m_Model; }
-
-    const T_Operation OperationForRead() const { return m_Operation; }
     T_Operation OperationForWrite() { return m_Operation; }
 
-    const std::vector<nnrt::OperandType>& InputArgTypes() const { return m_InputArgTypes; }
-    const std::vector<nnrt::OperandType>& OutputArgTypes() const { return m_OutputArgTypes; }
-
-   private:
+   protected:
     nnrt::OperandType MapToNnrtOperandType(OperandType type) {
         switch (type) {
             case OperandType::BOOL:
@@ -247,10 +275,16 @@ class OperationValidate {
                 return nnrt::OperandType::TENSOR_QUANT16_SYMM;
             case OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL:
                 return nnrt::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL;
+            #if ANDROID_SDK_VERSION >= 30
+            case OperandType::TENSOR_QUANT8_ASYMM_SIGNED:
+                return nnrt::OperandType::TENSOR_QUANT8_ASYMM_SIGNED;
+            #endif
             default:
                 return nnrt::OperandType::NONE;
         }
     }
+
+    protected:
     T_Model m_Model;
     T_Operation m_Operation;
     std::vector<nnrt::OperandType> m_InputArgTypes;

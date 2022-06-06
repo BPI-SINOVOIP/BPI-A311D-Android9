@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (c) 2005 - 2020 by Vivante Corp.  All rights reserved.
+*    Copyright (c) 2005 - 2021 by Vivante Corp.  All rights reserved.
 *
 *    The material in this file is confidential and contains trade secrets
 *    of Vivante Corporation. This is proprietary information owned by
@@ -36,6 +36,7 @@ typedef struct _gcsSURF_RESOLVE_ARGS
             gctBOOL   directCopy;
             gctBOOL   resample;
             gctBOOL   bUploadTex; /* used for upload tex.*/
+            gctBOOL   bSwap; /* used for swap.*/
             gctBOOL   visualizeDepth; /* convert depth to visible color */
             gcsPOINT  srcOrigin;
             gcsPOINT  dstOrigin;
@@ -49,6 +50,7 @@ typedef struct _gcsSURF_RESOLVE_ARGS
             gctBOOL   dstSwizzle;    /* dst surface format swizzle infomation */
             gctBOOL   srcCompressed;   /* src compressed format*/
             gctBOOL   dstCompressed;   /* dst compressed format*/
+            gctUINT   blitToSelf;
         } v2;
     } uArgs;
 }
@@ -79,6 +81,13 @@ typedef struct _gcoBUFOBJ *             gcoBUFOBJ;
 
 #define gcdATTRIBUTE_COUNT              32
 #define gcdVERTEXARRAY_POOL_CAPACITY    32
+
+#define gcdSTREAM_POOL_SIZE      128
+#define gcdSTREAM_GROUP_SIZE     16
+#define gcdSTREAM_SIGNAL_NUM \
+    (\
+        (gcdSTREAM_POOL_SIZE + gcdSTREAM_GROUP_SIZE - 1) / gcdSTREAM_GROUP_SIZE \
+    )
 
 #define gcvPORGRAM_STAGE_GPIPE (gcvPROGRAM_STAGE_VERTEX_BIT | \
                                 gcvPROGRAM_STAGE_TCS_BIT    | \
@@ -167,6 +176,8 @@ typedef struct _gcsSURF_BLIT_ARGS
     gctUINT     flags;
     gctUINT     srcNumSlice, dstNumSlice;
     gctBOOL     needDecode;
+    gctBOOL     readSwap;
+    gctBOOL     writeSwap;
 }
 gcsSURF_BLIT_ARGS;
 
@@ -1554,6 +1565,8 @@ typedef struct _gcsVX_IMAGE_INFO
 #if gcdVX_OPTIMIZER
     gctUINT32       uniformData[3][4];
 #endif
+    /* the uniform data type of save nbg */
+    gctUINT32       uniformSaveDataType;
 }
 gcsVX_IMAGE_INFO;
 typedef struct _gcsVX_DISTRIBUTION_INFO * gcsVX_DISTRIBUTION_INFO_PTR;
@@ -2201,6 +2214,12 @@ gcoTEXTURE_SetDepthTextureFlag(
     );
 
 gceSTATUS
+gcoTEXTURE_SetSpecialSwap(
+    IN gcoTEXTURE Texture,
+    IN gctBOOL  needSwap
+    );
+
+gceSTATUS
 gcoTEXTURE_BindTextureTS(
     IN gcsTEXTURE_BINDTEXTS_ARGS * args
     );
@@ -2380,6 +2399,9 @@ typedef struct _gcsATTRIBUTE
 
     /* Divisor of the attribute */
     gctUINT             divisor;
+
+    /* Offset of the attribute */
+    gctUINT             offset;
 
     /* Pointer to the attribute data. */
     gctCONST_POINTER    pointer;
@@ -2670,6 +2692,12 @@ gcoBUFOBJ_IndexGetRange(
     IN gctUINT32 Count,
     OUT gctUINT32 * MinimumIndex,
     OUT gctUINT32 * MaximumIndex
+    );
+
+/* Sets buffer upload endian hint */
+gceSTATUS
+gcoBUFOBJ_SetBufferEndianHint(
+    IN gcoBUFOBJ BufObj
     );
 
 /*  Sets a buffer object as dirty */

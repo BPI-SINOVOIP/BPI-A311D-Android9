@@ -27,17 +27,24 @@ NNSDK_PATH=nnsdk/lib/lib32/$(PLATFORM_PATH)
 Target=lib
 endif
 
+RRODUCT_PATH = $(LIB_PATH)/PID0x88
 ifeq ($(PRODUCT_CHIP_ID), PID0x88)
 RRODUCT_PATH := $(LIB_PATH)/PID0x88
-else
+endif
 
 ifeq ($(PRODUCT_CHIP_ID), PID0x99)
 RRODUCT_PATH := $(LIB_PATH)/PID0x99
-else
+endif
+
+ifeq ($(PRODUCT_CHIP_ID), PID0xB9)
 RRODUCT_PATH := $(LIB_PATH)/PID0xB9
 endif
 
+ifeq ($(PRODUCT_CHIP_ID), PID0xE8)
+RRODUCT_PATH := $(LIB_PATH)/PID0xE8
 endif
+
+
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
@@ -86,7 +93,7 @@ include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
-    $(LIB_PATH)/libOpenVX.so
+    $(RRODUCT_PATH)/libOpenVX.so
 LOCAL_MODULE         := libOpenVX
 LOCAL_MODULE_SUFFIX  := .so
 LOCAL_MODULE_TAGS    := optional
@@ -241,6 +248,21 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
     $(NNSDK_PATH)/libnnsdk.so
 LOCAL_MODULE         := libnnsdk
+LOCAL_MODULE_SUFFIX  := .so
+LOCAL_MODULE_TAGS    := optional
+LOCAL_MODULE_CLASS   := SHARED_LIBRARIES
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/$(Target)
+else
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
+endif
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := \
+    $(NNSDK_PATH)/libnndemo.so
+LOCAL_MODULE         := libnndemo
 LOCAL_MODULE_SUFFIX  := .so
 LOCAL_MODULE_TAGS    := optional
 LOCAL_MODULE_CLASS   := SHARED_LIBRARIES

@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -219,6 +219,9 @@ extern "C" {
 
 /* Beside gcvSTUCK_DUMP_USER_COMMAND, dump kernel command buffer. */
 #define gcvSTUCK_DUMP_ALL_COMMAND   4
+
+/* Dump all the cores with level 4 dump. */
+#define gcvSTUCK_DUMP_ALL_CORE      5
 
 /*******************************************************************************
 ***** Page table **************************************************************/
@@ -551,6 +554,9 @@ struct _gckKERNEL
     gceCORE                     core;
     gctUINT                     chipID;
 
+    /* Brothers */
+    gctPOINTER                  atomBroCoreMask;
+
     /* Main command module, event and context. */
     gckCOMMAND                  command;
     gckEVENT                    eventObj;
@@ -567,10 +573,7 @@ struct _gckKERNEL
     gctPOINTER                  atomClients;
 
 #if VIVANTE_PROFILER
-    /* Enable profiling */
-    gctBOOL                     profileEnable;
-    /* Clear profile register or not*/
-    gctBOOL                     profileCleanRegister;
+    gckPROFILER                 profiler;
 #endif
 
 #ifdef QNX_SINGLE_THREADED_DEBUGGING
@@ -817,7 +820,7 @@ struct _gckCOMMAND
      * Using the final free semaphore, means the ring is full of used ones.
      *
      * 'freeSemaId' + 1 = 'nextSemaId':
-     * Can use 'freeSema' + 1 to 'freeSema'(loop back), means empty ring,
+     * Can use 'freeSema' + 1 to 'nextSema'(loop back), means empty ring,
      * ie, no used one.
      */
 
@@ -1064,7 +1067,8 @@ gceSTATUS
 gckEVENT_Submit(
     IN gckEVENT Event,
     IN gctBOOL Wait,
-    IN gctBOOL FromPower
+    IN gctBOOL FromPower,
+    IN gctBOOL BroadcastCommit
     );
 
 gceSTATUS
@@ -1288,12 +1292,12 @@ typedef struct _gcsVIDMEM_BLOCK
 
     /* 1M page count. */
     gctUINT32                   pageCount;
+    gctUINT32                   fixedPageCount;
 
     /* Gpu virtual base of this video memory heap. */
     gctUINT32                   addresses[gcvHARDWARE_NUM_TYPES];
     gctPOINTER                  pageTables[gcvHARDWARE_NUM_TYPES];
 
-    /* TODO: */
     gceVIDMEM_TYPE              type;
 
     /* Virtual chunk. */
@@ -1347,6 +1351,7 @@ typedef struct _gcsVIDMEM_NODE
     gckVIDMEM_NODE              tsNode;
     gctUINT32                   tilingMode;
     gctUINT32                   tsMode;
+    gctUINT32                   tsCacheMode;
     gctUINT64                   clearValue;
 
 #if gcdCAPTURE_ONLY_MODE
@@ -1448,6 +1453,9 @@ typedef struct _gcsDEVICE
 
     /* Mutex for multi-core combine mode command submission */
     gctPOINTER                  commitMutex;
+
+    /* Mutex for per-device power management. */
+    gctPOINTER                  powerMutex;
 
 #if gcdENABLE_SW_PREEMPTION
     gctPOINTER                  atomPriorityID;
@@ -1810,6 +1818,11 @@ struct _gckMMU
 
     gceMMU_INIT_MODE            initMode;
     gctBOOL                     pageTableOver4G;
+
+    gcePAGE_TYPE                flatMappingMode;
+
+    /* If the stlb is allocated when page size is 16M . */
+    gctBOOL                     stlbAllocated[gcdMMU_STLB_16M_ENTRY_NUM];
 };
 
 
@@ -1889,8 +1902,10 @@ gckKERNEL_AllocateVideoMemory(
     );
 
 gceSTATUS
-gckHARDWARE_QchannelPowerOn(
-    IN gckHARDWARE Hardware
+gckHARDWARE_QchannelPowerControl(
+    IN gckHARDWARE Hardware,
+    IN gctBOOL ClockState,
+    IN gctBOOL PowerState
     );
 
 gceSTATUS
@@ -2097,6 +2112,15 @@ gckKERNEL_GetHardwareType(
     IN gckKERNEL Kernel,
     OUT gceHARDWARE_TYPE *Type
     );
+
+#if gcdENABLE_MP_SWITCH
+gceSTATUS
+gckKERNEL_DetectMpModeSwitch(
+    IN gckKERNEL Kernel,
+    IN gceMULTI_PROCESSOR_MODE Mode,
+    OUT gctUINT32 *SwitchMpMode
+    );
+#endif
 
 /******************************************************************************\
 ******************************* gckCONTEXT Object *******************************

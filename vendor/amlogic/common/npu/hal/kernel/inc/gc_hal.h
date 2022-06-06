@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -89,6 +89,12 @@ extern "C" {
 (\
     (gcmALIGN((n) & ~0ULL, (align) & ~0ULL) ^ gcmALIGN(n, align)) ?    \
          (n) : gcmALIGN(n, align)                                      \
+)
+
+#define gcmALIGN_CHECK_OVERFLOW(n, align)                              \
+(\
+    (gcmALIGN((n) & ~0ULL, (align) & ~0ULL) ^ gcmALIGN(n, align)) ?    \
+         gcvSTATUS_RESLUT_OVERFLOW : gcvSTATUS_OK                      \
 )
 
 #define gcmALIGN_BASE(n, align) \
@@ -166,8 +172,6 @@ typedef struct _gckHARDWARE *       gckHARDWARE;
 #define gcdMAX_DRAW_BUFFERS            16
 
 #define gcdMAX_3DGPU_COUNT             8
-
-#define gcdMAX_MAJOR_CORE_COUNT        8
 
 #define gcdMAX_VERTEX_STREAM_COUNT     4
 /*******************************************************************************
@@ -803,6 +807,13 @@ gckOS_Delay(
     IN gctUINT32 Delay
     );
 
+/* Delay a number of milliseconds. */
+gceSTATUS
+gckOS_Udelay(
+    IN gckOS Os,
+    IN gctUINT32 Delay
+    );
+
 /* Get time in milliseconds. */
 gceSTATUS
 gckOS_GetTicks(
@@ -1134,6 +1145,14 @@ gckOS_GetPolicyID(
     OUT gctUINT32_PTR AXIConfig
     );
 
+#if gcdENABLE_MP_SWITCH
+gceSTATUS
+gckOS_SwitchCoreCount(
+    IN gckOS Os,
+    OUT gctUINT32 *Count
+    );
+#endif
+
 /******************************************************************************\
 ************************** Android Native Fence Sync ***************************
 \******************************************************************************/
@@ -1358,6 +1377,20 @@ gckOS_SetGPUPower(
     );
 
 gceSTATUS
+gckOS_SetClockState(
+    IN gckOS Os,
+    IN gceCORE Core,
+    IN gctBOOL Clock
+    );
+
+gceSTATUS
+gckOS_GetClockState(
+    IN gckOS Os,
+    IN gceCORE Core,
+    IN gctBOOL * Clock
+    );
+
+gceSTATUS
 gckOS_ResetGPU(
     IN gckOS Os,
     IN gceCORE Core
@@ -1402,42 +1435,40 @@ gckOS_CreateSemaphore(
     );
 
 
-/* Delete a semahore. */
+/* Delete a semaphore. */
 gceSTATUS
 gckOS_DestroySemaphore(
     IN gckOS Os,
     IN gctPOINTER Semaphore
     );
 
-/* Acquire a semahore. */
+/* Acquire a semaphore. */
 gceSTATUS
 gckOS_AcquireSemaphore(
     IN gckOS Os,
     IN gctPOINTER Semaphore
     );
 
-/* Try to acquire a semahore. */
+/* Try to acquire a semaphore. */
 gceSTATUS
 gckOS_TryAcquireSemaphore(
     IN gckOS Os,
     IN gctPOINTER Semaphore
     );
 
-/* Release a semahore. */
+/* Release a semaphore. */
 gceSTATUS
 gckOS_ReleaseSemaphore(
     IN gckOS Os,
     IN gctPOINTER Semaphore
     );
 
-#if gcdENABLE_SW_PREEMPTION
-/* Release a semahore. */
+/* Release a semaphore. */
 gceSTATUS
 gckOS_ReleaseSemaphoreEx(
     IN gckOS Os,
     IN gctPOINTER Semaphore
     );
-#endif
 
 /*******************************************************************************
 ** Timer API.
@@ -2134,7 +2165,10 @@ gceSTATUS
 gckMMU_FillFlatMapping(
     IN gckMMU Mmu,
     IN gctUINT64 PhysBase,
-    IN gctSIZE_T Size
+    IN gctSIZE_T Size,
+    IN gctBOOL   Reserved,
+    IN gctBOOL   AbleToShift,
+    OUT gctUINT32 *GpuBaseAddress
     );
 
 gceSTATUS
@@ -2142,6 +2176,7 @@ gckMMU_IsFlatMapped(
     IN gckMMU Mmu,
     IN gctUINT64 Physical,
     IN gctUINT32 Address,
+    IN gctSIZE_T Bytes,
     OUT gctBOOL *In
     );
 
@@ -2156,15 +2191,13 @@ gceSTATUS
 gckHARDWARE_QueryContextProfile(
     IN gckHARDWARE Hardware,
     IN gctBOOL Reset,
-    IN gckCONTEXT Context,
     OUT gcsPROFILER_COUNTERS_PART1 * Counters_part1,
     OUT gcsPROFILER_COUNTERS_PART2 * Counters_part2
     );
 
 gceSTATUS
 gckHARDWARE_UpdateContextProfile(
-    IN gckHARDWARE Hardware,
-    IN gckCONTEXT Context
+    IN gckHARDWARE Hardware
     );
 
 gceSTATUS

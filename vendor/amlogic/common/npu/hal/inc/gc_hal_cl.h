@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (c) 2005 - 2020 by Vivante Corp.  All rights reserved.
+*    Copyright (c) 2005 - 2021 by Vivante Corp.  All rights reserved.
 *
 *    The material in this file is confidential and contains trade secrets
 *    of Vivante Corporation. This is proprietary information owned by
@@ -69,6 +69,7 @@ typedef struct _gcoCL_DEVICE_INFO
     gctUINT64           queueProperties;        /* cl_command_queue_properties */
     gctBOOL             hostUnifiedMemory;
     gctBOOL             errorCorrectionSupport;
+    gctUINT64           halfFpConfig;           /* cl_device_fp_config */
     gctUINT64           singleFpConfig;         /* cl_device_fp_config */
     gctUINT64           doubleFpConfig;         /* cl_device_fp_config */
     gctUINT             profilingTimingRes;
@@ -90,6 +91,15 @@ typedef struct _gcoCL_DEVICE_INFO
     gctBOOL             multiWGPack;
     gctBOOL             asyncBLT;
     gctBOOL             multiCluster;
+
+    /* cluster info */
+    gctBOOL             clusterSupport;
+    gctUINT32           clusterCount[gcdMAX_MAJOR_CORE_COUNT];
+    gctUINT32           clusterAliveMask[gcdMAX_MAJOR_CORE_COUNT];
+    gctUINT32           clusterAliveCount[gcdMAX_MAJOR_CORE_COUNT];
+    gctUINT32           clusterMinID[gcdMAX_MAJOR_CORE_COUNT];
+    gctUINT32           clusterMaxID[gcdMAX_MAJOR_CORE_COUNT];
+    gctUINT32           totalClusterAliveCount;
 
     gceCHIPMODEL        chipModel;
     gctUINT32           chipRevision;
@@ -827,6 +837,45 @@ gcoCL_ChooseBltEngine(
     IN gcsSURF_NODE_PTR node,
     OUT gceENGINE * engine
     );
+
+gceSTATUS
+gcoCL_IsFeatureAvailable(
+    IN gcoHARDWARE Hardware,
+    IN gceFEATURE Feature
+    );
+
+gctUINT
+gcoCL_QueryBLTFenceEndianHint(
+    IN gcoHARDWARE Hardware
+    );
+
+gceSTATUS
+gcoCL_3dBltLock(
+    IN gcoHARDWARE Hardware,
+    IN gceENGINE Engine,
+    IN gctBOOL forceSingle,
+    IN gctUINT32_PTR * Memory
+    );
+
+gceSTATUS
+gcoCL_3dBltUnlock(
+    IN gcoHARDWARE Hardware,
+    IN gceENGINE Engine,
+    IN gctBOOL forceSingle,
+    IN gctUINT32_PTR * Memory
+    );
+
+gceSTATUS
+gcoCL_SubmitCmdBuffer(
+    gcoHARDWARE Hardware,
+    uint32_t *states,
+    uint32_t count);
+
+
+gctUINT
+gcoCL_coreIdToChip(
+    gcoHARDWARE Hardware,
+    gctUINT coreId);
 
 #ifdef __cplusplus
 }

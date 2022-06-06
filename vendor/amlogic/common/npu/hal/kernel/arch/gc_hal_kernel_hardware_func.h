@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -64,7 +64,7 @@ extern "C" {
 #define gcdFLOP_RESET_PPU       1
 #define gcdFLOP_RESET_NN        1
 #define gcdFLOP_RESET_TP        1
-
+#define gcdFLOP_RESET_DEBUG     0
 /*
  * The following macros are for old FLOP
  * reset path.
@@ -156,9 +156,17 @@ typedef struct _gcsFUNCTION_COMMAND
     /* Physical of End in this function. */
     gctPHYS_ADDR_T              endPhysical;
 
+    /* mcfe channel set. */
+    gctUINT32                   channelId;
+
     /* Function private data */
     gctUINT32                   dataCount;
     gcsFUNCTION_EXECUTION_DATA_PTR data;
+#if gcdFLOP_RESET_DEBUG
+    gctPOINTER                   golden;
+    gctPOINTER                  outlogical;
+    gctUINT32                   outSize;
+#endif
 }
 gcsFUNCTION_COMMAND, *gcsFUNCTION_COMMAND_PTR;
 
@@ -191,7 +199,7 @@ gcsFUNCTION_EXECUTION;
 
 gceSTATUS gckFUNCTION_Construct(IN         gctPOINTER Hardware);
 gceSTATUS gckFUNCTION_Destory(IN    gctPOINTER Hardware);
-
+gceSTATUS gckFUNCTION_CheckCHIPID(IN gcsFUNCTION_EXECUTION_PTR Execution);
 gceSTATUS gckFUNCTION_Validate(IN gcsFUNCTION_EXECUTION_PTR Execution,
                                        IN OUT gctBOOL_PTR Valid);
 gceSTATUS gckFUNCTION_Init(IN gcsFUNCTION_EXECUTION_PTR Execution);

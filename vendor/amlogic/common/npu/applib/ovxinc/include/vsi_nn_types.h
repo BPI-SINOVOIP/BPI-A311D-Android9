@@ -93,7 +93,17 @@ typedef enum
     VSI_NN_OPTIMIZE_FORWARD,
     VSI_NN_OPTIMIZE_BACKWARD
 } vsi_nn_opt_direction_e;
-
+#ifdef VX_CREATE_TENSOR_SUPPORT_PHYSICAL
+typedef enum
+{
+    VSI_MEMORY_TYPE_NONE = VX_MEMORY_TYPE_NONE,
+    VSI_MEMORY_TYPE_HOST = VX_MEMORY_TYPE_HOST,
+    VSI_MEMORY_TYPE_DMABUF = VX_MEMORY_TYPE_DMABUF,
+    VSI_MEMORY_TYPE_INERNAL = VX_MEMORY_TYPE_INTERNAL,
+    VSI_MEMORY_TYPE_UNCACHED = VX_MEMORY_TYPE_HOST_UNCACHED,
+    VSI_MEMORY_TYPE_PHYSICAL = VX_MEMORY_TYPE_HOST_PHYSICAL,
+}vsi_memory_type_e;
+#endif
 /** Type enum */
 typedef enum
 {
@@ -157,6 +167,18 @@ typedef enum
     VSI_NN_DEPTH2SPACE_CRD
 } vsi_nn_depth2space_mode_e;
 
+typedef enum
+{
+    VSI_NN_GRAPH_PRELOAD_VIPSRAM,
+    VSI_NN_GRAPH_PRELOAD_AXISRAM
+} vsi_nn_graph_attr_preload_type_e;
+
+typedef enum _vsi_nn_node_attr_preload_type_e
+{
+    VSI_NN_NODE_PRELOAD_NONE,
+    VSI_NN_NODE_PRELOAD_VIPSRAM,
+    VSI_NN_NODE_PRELOAD_AXISRAM
+} vsi_nn_node_attr_preload_type_e;
 
 /** Deprecated */
 typedef uint32_t vsi_nn_size_t;

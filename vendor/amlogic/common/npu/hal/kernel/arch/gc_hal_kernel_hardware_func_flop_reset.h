@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -62,6 +62,7 @@ extern "C" {
 #include "gc_hal_kernel.h"
 #include "gc_hal_kernel_hardware.h"
 
+
 gceSTATUS
 gckHARDWARE_ResetFlopWithPPU(
     IN gckHARDWARE Hardware,
@@ -88,5 +89,10 @@ gckHARDWARE_ResetFlopWithTP(
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef gcdENABLE_FLOP_RESET_DEBUG
+#   define gcdENABLE_FLOP_RESET_DEBUG                    0
+#endif
+
 #endif
 

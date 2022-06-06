@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2021 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2021 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -285,13 +285,6 @@ gckMCFE_Construct(
                               &fe->channels[i]));
     }
 
-    /* Enable all events. */
-    gcmkONERROR(
-        gckOS_WriteRegisterEx(Hardware->os,
-                              Hardware->core,
-                              0x00014,
-                              0xFFFFFFFF));
-
     *FE = fe;
     return gcvSTATUS_OK;
 
@@ -383,7 +376,7 @@ _InitializeChannel(
         gcmkONERROR(_AllocateDescRingBuf(Hardware, &Channel->stdRingBuf));
     }
 
-    /* No priority channel in system engine. */
+    /* Index 0 is system channel, no priority ring buffer in system channel. */
     if (!Channel->priRingBuf.ringBufVideoMem && Index != 0)
     {
         gcmkONERROR(_AllocateDescRingBuf(Hardware, &Channel->priRingBuf));
@@ -414,18 +407,31 @@ gckMCFE_Initialize(
     gctUINT32 i;
     gceSTATUS status;
 
+    gcmkHEADER_ARG("Hardware=%p MMUEnabled=%d FE=%p", Hardware, MMUEnabled, FE);
+
     for (i = 0; i < FE->channelCount; i++)
     {
+        /* If channel is constructed. */
         if (FE->channels[i].binding)
         {
             gcmkONERROR(_InitializeChannel(Hardware, MMUEnabled, &FE->channels[i], i));
         }
     }
 
+    /* Enable all events. */
+    gcmkONERROR(
+        gckOS_WriteRegisterEx(Hardware->os,
+                              Hardware->core,
+                              0x00014,
+                              0xFFFFFFFF));
+
     FE->mmuEnabled = MMUEnabled;
+
+    gcmkFOOTER_NO();
     return gcvSTATUS_OK;
 
 OnError:
+    gcmkFOOTER();
     return status;
 }
 
@@ -761,21 +767,37 @@ gckMCFE_Execute(
     IN gctUINT32 Bytes
     )
 {
+    gceSTATUS status;
     gctUINT32 regBase;
     gcsMCFE_DESCRIPTOR *desc;
-    gcsMCFE_CHANNEL * channel  = &Hardware->mcFE->channels[ChannelId];
-    gcsMCFE_RING_BUF * ringBuf = Priority ? &channel->priRingBuf
-                              : &channel->stdRingBuf;
+    gckMCFE mcFE = Hardware->mcFE;
+    gcsMCFE_CHANNEL * channel  = gcvNULL;
+    gcsMCFE_RING_BUF * ringBuf = gcvNULL;
+
+    gcmkHEADER_ARG("Hardware=0x%x Priority=0x%x ChannelId=%u Address=%x Bytes=%u",
+                    Hardware, Priority, ChannelId, Address, Bytes);
+
+    /* ChannelId should be valid. */
+    gcmkASSERT(mcFE && ChannelId < mcFE->channelCount);
+
+    channel = &mcFE->channels[ChannelId];
 
     /* No priority channel in system channel by design. */
     gcmkASSERT(!(channel->binding == gcvMCFE_CHANNEL_SYSTEM && Priority == 1));
 
+    ringBuf = Priority ? &channel->priRingBuf : &channel->stdRingBuf;
+
+    /*
+     * If no more descriptor space to write in ring buffer.
+     * To be improved to wait signal instead of blindly delay.
+     */
     while (_NextPtr(ringBuf->writePtr) == ringBuf->readPtr)
     {
         gctUINT32 data;
         regBase = Priority ? 0x02B00
                 : 0x02700;
 
+        /* DescFifoRdPtr is 4 bytes aligned. */
         gcmkVERIFY_OK(gckOS_ReadRegisterEx(Hardware->os,
                                            Hardware->core,
                                            regBase + ChannelId * 4,
@@ -794,10 +816,11 @@ gckMCFE_Execute(
         }
     }
 
+    /* Write the execute address to free descriptor. */
     regBase = Priority ? 0x02A00
             : 0x02600;
 
-    /* ringBufLogical is in uint32, 2 uint32 contributes 1 descriptr. */
+    /* ringBufLogical is in uint32, 2 uint32 (command start, command end) contributes 1 descriptr. */
     desc = (gcsMCFE_DESCRIPTOR *)&ringBuf->ringBufLogical[ringBuf->writePtr * 2];
     desc->start = Address;
     desc->end   = Address + Bytes;
@@ -814,11 +837,11 @@ gckMCFE_Execute(
                     ringBuf->ringBufAddress + ringBuf->writePtr * 8,
                     8);
 
-    gcmkVERIFY_OK(gckVIDMEM_NODE_CleanCache(Hardware->kernel,
-                                            ringBuf->ringBufVideoMem,
-                                            0,
-                                            desc,
-                                            8));
+    gcmkONERROR(gckVIDMEM_NODE_CleanCache(Hardware->kernel,
+                                          ringBuf->ringBufVideoMem,
+                                          0,
+                                          desc,
+                                          8));
 
     ringBuf->writePtr = _NextPtr(ringBuf->writePtr);
 
@@ -827,12 +850,21 @@ gckMCFE_Execute(
                    desc->start, desc->end, Bytes,
                    Priority ? "Pri" : "Std", ChannelId);
 
-    gcmkVERIFY_OK(gckOS_WriteRegisterEx(Hardware->os,
-                                        Hardware->core,
-                                        regBase + ChannelId * 4,
-                                        ringBuf->writePtr));
+    /* DescFifoWrPtr is 4 bytes aligned, move it to next for comming descriptor. */
+    gcmkONERROR(gckOS_WriteRegisterEx(Hardware->os,
+                                      Hardware->core,
+                                      regBase + ChannelId * 4,
+                                      ringBuf->writePtr));
 
+    /* Success. */
+    gcmkFOOTER_NO();
     return gcvSTATUS_OK;
+
+OnError:
+    /* Return the status. */
+    gcmkFOOTER();
+    return status;
+
 }
 
 gceSTATUS
@@ -847,11 +879,17 @@ gckMCFE_HardwareIdle(
     gctUINT32 readPtr;
     gctUINT32 ChannelId = 0;
     gctBOOL Priority = gcvFALSE;
-    gcsMCFE_CHANNEL * channel  = &Hardware->mcFE->channels[ChannelId];
-    gcsMCFE_RING_BUF * ringBuf = Priority ? &channel->priRingBuf
-                              : &channel->stdRingBuf;
+    gckMCFE mcFE = Hardware->mcFE;
+    gcsMCFE_CHANNEL * channel  = gcvNULL;
+    gcsMCFE_RING_BUF * ringBuf = gcvNULL;
 
     gcmkHEADER();
+
+    /* ChannelId should be valid. */
+    gcmkASSERT(mcFE && ChannelId < mcFE->channelCount);
+
+    channel = &mcFE->channels[ChannelId];
+    ringBuf = Priority ? &channel->priRingBuf : &channel->stdRingBuf;
 
     *isIdle = gcvTRUE;
 
@@ -875,6 +913,7 @@ gckMCFE_HardwareIdle(
                                        regRBase + ChannelId * 4,
                                        &readPtr));
 
+    /* No more descriptor to execute. */
     if (readPtr != ringBuf->writePtr)
     {
         *isIdle = gcvFALSE;
