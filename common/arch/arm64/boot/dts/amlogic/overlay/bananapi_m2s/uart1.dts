@@ -9,7 +9,7 @@
 		__overlay__ {
 			status = "okay";
 			pinctrl-names = "default";
-			pinctrl-0 = <&a_uart_pins>; /* GPIOX_12,GPIOX_13 */
+			pinctrl-0 = <&a_uart_2_pins>; /* GPIOX_12,GPIOX_13 */
 		};
 	};
 };

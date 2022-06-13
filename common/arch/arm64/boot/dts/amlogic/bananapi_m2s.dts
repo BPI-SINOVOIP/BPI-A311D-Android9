@@ -1141,7 +1141,7 @@
 		};
 	};
 	
-	bl_pwm_off_pins:bl_pwm_off_pin {
+	bl_pwm_off_pins: bl_pwm_off_pin {
 		mux {
 			pins = "GPIOA_11";
 			function = "gpio_periphs";
@@ -1149,12 +1149,10 @@
 		};
 	};
 
-	a_uart_cts_rts_pins: a_uart_cts_rts {
-		mux { /* GPIOX_12, GPIOX_13, GPIOX_14, GPIOX_15 */
+	a_uart_2_pins: a_uart_2_pins {
+		mux { /* GPIOX_12, GPIOX_13 */
 			groups = "uart_tx_a",
-				"uart_rx_a",
-				"uart_cts_a",
-				"uart_rts_a";
+				"uart_rx_a";
 			function = "uart_a";
 		};
 	};
@@ -1298,14 +1296,6 @@
 
 	/* reset */
 	rst_pin-gpios = <&gpio GPIOZ_15 GPIO_ACTIVE_LOW>;
-};
-
-&a_uart_pins {
-	mux { /* GPIOX_12, GPIOX_13 */
-		groups = "uart_tx_a",
-			"uart_rx_a";
-		function = "uart_a";
-	};
 };
 
 &uart_A {
