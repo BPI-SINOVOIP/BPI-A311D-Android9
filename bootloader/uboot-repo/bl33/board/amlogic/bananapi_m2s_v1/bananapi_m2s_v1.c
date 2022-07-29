@@ -656,8 +656,12 @@ U_BOOT_DEVICES(meson_pwm) = {
 #define BOARD_REVISION(y,m,d)   (((0x##y & 0xffff) << 16) \
                 | ((0x##m & 0xff) << 8) | ((0x##d & 0xff) << 0))
 
-#define BOARD_TYPE_CHANNEL			0
-#define BOARD_REV_CHANNEL			1
+#define BOARD_TYPE_CHANNEL		0
+#define BOARD_REV_CHANNEL		1
+
+#define BOARD_S922X_M2S			0
+#define BOARD_A311D_M2S			1
+#define BOARD_A311D_CM4			2
 
 int get_adc_value(int channel)
 {
@@ -672,27 +676,43 @@ int get_adc_value(int channel)
 	return val;
 }
 
-void get_hw_revision(void)
+int get_hw_revision(void)
 {
-	int val;
+	int board_type, board_rev;
 
-	val = get_adc_value(BOARD_TYPE_CHANNEL);
-	if (IS_RANGE(val, 0, 50)) {
-		//setenv for test adc
-		printf("Board is S922X\n");
-		setenv("board_type", "S922X");
-	}
-	else if (IS_RANGE(val, 900, 1100)) {
-		//setenv for test adc
-		printf("Board is A311D\n");
-		setenv("board_type", "A311D");
-	}
+	board_type = get_adc_value(BOARD_TYPE_CHANNEL);
+	board_rev = get_adc_value(BOARD_REV_CHANNEL);
 
-	val = get_adc_value(BOARD_REV_CHANNEL);
-	if (IS_RANGE(val, 900, 1100)) {     /* avg : 90 */
+	if (IS_RANGE(board_rev, 900, 1100)) {  /* m2s */
 		printf("BPI hw revision: bananapi_m2s_v1\n");
 		setenv("board", "bananapi_m2s");
+
+		if (IS_RANGE(board_type, 0, 50)) {    /* s922x m2s */
+			//setenv for test adc
+			printf("Board is S922X M2S\n");
+			setenv("board_type", "S922X_M2S");
+			return BOARD_S922X_M2S;
+		}
+		else if (IS_RANGE(board_type, 900, 1100)) {   /* a311d m2s */
+			//setenv for test adc
+			printf("Board is A311D M2S\n");
+			setenv("board_type", "A311D_M2S");
+			return BOARD_A311D_M2S;
+		}
 	}
+	else if (IS_RANGE(board_rev, 0, 50)) {  /* cm4 */
+		printf("BPI hw revision: bananapi_cm4_v1\n");
+		setenv("board", "bananapi_cm4");
+
+		if (IS_RANGE(board_type, 900, 1100)) {   /* a311d m2s */
+			//setenv for test adc
+			printf("Board is A311D CM4\n");
+			setenv("board_type", "A311D_CM4");
+			return BOARD_A311D_CM4;
+                }
+	}
+
+	return -1;
 }
 
 int board_init(void)
@@ -790,7 +810,7 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-	get_hw_revision();
+	//get_hw_revision();
 
 	TE(__func__);
 	return 0;
@@ -843,14 +863,18 @@ int checkhw(char * name)
 	printf("cpu_id.layout_ver: %x\n", cpu_id.layout_ver);
 
 	if (cpu_id.chip_rev == MESON_CPU_CHIP_REVISION_B) {
-		switch (cpu_id.package_id) {
-			case MESON_CPU_PACKAGE_ID_922X:
+		switch (get_hw_revision()) {
+			case BOARD_S922X_M2S:
 				strcpy(loc_name, "bananapi_m2s_922x\0");
 				setenv("fdtfile", "bananapi_m2s_922x.dtb");
 				break;
-			case MESON_CPU_PACKAGE_ID_A311D:
+			case BOARD_A311D_M2S:
 				strcpy(loc_name, "bananapi_m2s_a311d\0");
 				setenv("fdtfile", "bananapi_m2s.dtb");
+				break;
+			case BOARD_A311D_CM4:
+				strcpy(loc_name, "bananapi_cm4_a311d\0");
+				setenv("fdtfile", "bananapi_cm4.dtb");
 				break;
 			default:
 				strcpy(loc_name, "unsupport");
