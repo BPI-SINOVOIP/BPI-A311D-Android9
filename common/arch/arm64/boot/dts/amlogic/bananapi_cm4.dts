@@ -812,19 +812,38 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_master_pins3>; /* GPIOH_6,GPIOH_7 */
 	clock-frequency = <400000>;
 
 	sensor-i2c@6c {
 		compatible = "arm, i2c-sensor";
+		status = "disabled";
 		reg = <0x6c>;
 		reg-names = "i2c-sensor";
 		slave-addr = <0x6c>;
 		reg-type = <2>;
 		reg-data-type = <1>;
 		link-device = <&phycsi>;
+	};
+
+	rtc-pcf85063@51 {
+		compatible = "nxp,pcf85063";
+		reg = <0x51>;
+		status = "okay";
+	};
+
+	fan-emc2301@2f {
+		compatible = "microchip,emc2301";
+		reg = <0x2f>;
+		#cooling-cells = <0x02>;
+		status = "okay";
+
+		fan0: fan@0 {
+			min-rpm = /bits/ 16 <500>;
+			max-rpm = /bits/ 16 <5500>;
+		};
 	};
 };
 
@@ -1340,4 +1359,8 @@
 	pinctrl-0 = <&spicc0_pins_x>;
 	num_chipselect = <1>;
 	cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
+};
+
+&vrtc {
+	status = "disabled";
 };
