@@ -94,6 +94,35 @@ int enableCameraVcc(void)
     return 0;
 }
 
+void lcd_detect(void)
+{
+	unsigned int val;
+
+	/* set gpioa_5 input(lcd_rst)*/
+	writel(readl(PREG_PAD_GPIO5_EN_N) | (1 << 5), PREG_PAD_GPIO5_EN_N);
+	writel(readl(PAD_PULL_UP_EN_REG5) | (1 << 5), PREG_PAD_GPIO5_EN_N);
+	writel(readl(PAD_PULL_UP_REG5) | (1 << 5), PREG_PAD_GPIO5_EN_N);
+	writel(readl(PERIPHS_PIN_MUX_E) | (0xf << 4), PERIPHS_PIN_MUX_E);
+
+	/* set gpioa_9 output high to enable lcd power */
+	writel(readl(PREG_PAD_GPIO5_EN_N) & (~(1 << 9)), PREG_PAD_GPIO5_EN_N);
+	writel(readl(PREG_PAD_GPIO5_O) | (1 << 9), PREG_PAD_GPIO5_O);
+	writel(readl(PERIPHS_PIN_MUX_E) & (~(0xf << 4)), PERIPHS_PIN_MUX_E);
+
+	mdelay(100);
+
+	val = readl(PREG_PAD_GPIO5_I);
+	//printf("lcd_detect: val=%x\n", val);
+	val &= ~0xffdf;
+	val = val >> 5;
+	if (val)
+		printf("lcd_detect: lcd connected\n");
+	else
+		printf("lcd_detect: lcd disconnected\n");
+
+	setenv_ulong("lcd_exist", val);
+}
+
 /* secondary_boot_func
  * this function should be write with asm, here, is is only for compiling pass
  * */
@@ -798,6 +827,7 @@ int board_late_init(void)
 	run_command("cvbs init", 0);
 #endif
 #ifdef CONFIG_AML_LCD
+	lcd_detect();
 	lcd_probe();
 #endif
 

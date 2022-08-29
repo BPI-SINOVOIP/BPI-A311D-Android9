@@ -310,6 +310,18 @@
                 "fi;"\
             "fi;fi;"\
             "\0"\
+        "display_config="\
+            "fdt addr ${dtb_mem_addr}; "\
+            "if test ${lcd_exist} = 0; then "\
+				"echo lcd not exist, disable dtb nodes"\
+                "fdt set /lcd status disable;"\
+                "fdt set /backlight status disable;"\
+                "fdt set /soc/cbus@ffd00000/i2c@1c000 status disable;"\
+            "else "\
+                "echo lcd exist, set dtb dtb /meson-fb correct width and height;"\
+                "fdt set /meson-fb display_size_default <${lcd_width} ${lcd_height} ${lcd_width} ${lcd_vir_height} 32>;"\
+            "fi;"\
+            "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
                 "if keyman read usid ${loadaddr} str; then "\
@@ -345,22 +357,6 @@
                 "echo detect upgrade key; run update;"\
             "fi;"\
             "\0"\
-        "lcd_detect="\
-            "gpio set GPIOA_9; sleep 1;"\
-            "fdt addr ${dtb_mem_addr};"\
-            "if gpio input GPIOA_5; then "\
-                "echo detect lcd not exist;"\
-                "setenv lcd_exist 0;"\
-                "fdt set /lcd status disable;"\
-                "fdt set /backlight status disable;"\
-                "fdt set /soc/cbus@ffd00000/i2c@1c000 status disable;"\
-                "gpio clear GPIOA_9;"\
-            "else "\
-                "echo detect lcd exist;"\
-                "fdt set /meson-fb display_size_default <${lcd_width} ${lcd_height} ${lcd_width} ${lcd_vir_height} 32>;"\
-                "setenv lcd_exist 1;"\
-            "fi;"\
-            "\0"\
 	"irremote_update="\
 		"if irkey 2500000 0xe31cfb04 0xb748fb04; then "\
 			"echo read irkey ok!; " \
@@ -377,8 +373,8 @@
             "run boot_from_sd_udisk;"\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run lcd_detect;"\
             "run init_display;"\
+            "run display_config;"\
             "run storeargs;"\
             "forceupdate;" \
             "bcb uboot-command;"\
@@ -403,6 +399,7 @@
 
 /* for portrait panel, recovery always displays on panel */
 #define CONFIG_RECOVERY_DUAL_LOGO \
+	"echo recovery dual logo display; " \
 	"setenv outputmode panel;setenv display_layer osd0;"\
 	"setenv fb_height ${lcd_height}; setenv fb_width ${lcd_width};"\
 	"vout output $outputmode;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;"\
@@ -718,6 +715,7 @@
 #define CONFIG_EXT4_WRITE 1
 #define CONFIG_CMD_EXT4 1
 #define CONFIG_CMD_EXT4_WRITE 1
+#define CONFIG_CMD_FS_GENERIC 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
