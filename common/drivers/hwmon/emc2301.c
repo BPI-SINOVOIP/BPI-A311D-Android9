@@ -9,6 +9,8 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
+ * https://github.com/neg2led/cm4io-fan/blob/master/emc2301/emc2301.c
+ * https://gitlab.traverse.com.au/ls1088firmware/traverse-sensors/-/blob/master/emc2301/emc2301.c
  */
 
 #include <linux/err.h>
@@ -20,16 +22,21 @@
 #include <linux/version.h>
 #include <linux/thermal.h>
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 2, 0)
-#define HWMON_CHANNEL_INFO(stype, ...) \
-	(&(struct hwmon_channel_info){ .type = hwmon_##stype, .config = (u32[]){ __VA_ARGS__, 0 } })
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,2,0)
+#define HWMON_CHANNEL_INFO(stype, ...)	\
+	(&(struct hwmon_channel_info) {	\
+		.type = hwmon_##stype,	\
+		.config = (u32 []) {	\
+			__VA_ARGS__, 0	\
+		}			\
+	})
 #endif
 /*
  * Factor by equations [2] and [3] from data sheet; valid for fans where the
  * number of edges equals (poles * 2 + 1).
  */
 #define FAN_RPM_FACTOR 3932160
-#define FAN_TACH_MULTIPLIER 1
+#define FAN_TACH_MULTIPLIER 2
 
 #define TACH_HIGH_MASK GENMASK(12, 5)
 #define TACH_LOW_MASK GENMASK(4, 0)
@@ -312,19 +319,13 @@ static int emc2301_enable_rpm_control(struct emc2301_data *data, u16 fan_dev, bo
 	u8 fan_config_reg_val;
 	int ret = 0;
 
-	// get current fan config reg value
 	fan_config_reg_addr = 0x32 + (fan_dev * 0x10);
-	fan_config_reg_val = i2c_smbus_read_byte_data(data->i2c, fan_config_reg_addr);
 
-	// update config reg to enable/disable control as requested
+	fan_config_reg_val = i2c_smbus_read_byte_data(data->i2c, fan_config_reg_addr);
 	if (enable) {
-		// set ENAx to enable drive
-		fan_config_reg_val |= (1 << 7);
-		// clear RNGx to set minRPM=500
-		fan_config_reg_val &= ~(0b11 << 5);
+        fan_config_reg_val |= (1<<7);
 	} else {
-		// clear ENAx
-		fan_config_reg_val &= ~(1 << 7);
+        fan_config_reg_val &= ~(1<<7);
 	}
 
 	dev_info(data->dev, "Writing 0x%02X to 0x%02X\n", fan_config_reg_val, fan_config_reg_addr);
@@ -447,8 +448,8 @@ static int emc2301_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id 
 		dev_info(&i2c->dev, "Channel %d minimum RPM is %d", i, data->minimum_rpm[i]);
 	}
 #endif
-	hwmon_dev =
-		devm_hwmon_device_register_with_info(&i2c->dev, i2c->name, data, &emc2301_chip_info, NULL);
+	hwmon_dev = devm_hwmon_device_register_with_info(&i2c->dev,
+		i2c->name, data, &emc2301_chip_info, NULL);
 
 	if (IS_REACHABLE(CONFIG_THERMAL) && has_cooling_step && register_cdev == 1) {
 		dev_info(&i2c->dev, "registering a cooling device");
@@ -462,8 +463,14 @@ static int emc2301_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id 
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id emc2301_i2c_id[] = { { "emc2305", 0 }, { "emc2304", 0 }, { "emc2303", 0 },
-						       { "emc2302", 0 }, { "emc2301", 0 }, {} };
+static const struct i2c_device_id emc2301_i2c_id[] = {
+	{ "emc2305", 0 },
+	{ "emc2304", 0 },
+	{ "emc2303", 0 },
+	{ "emc2302", 0 },
+	{ "emc2301", 0 },
+	{}
+};
 
 MODULE_DEVICE_TABLE(i2c, emc2301_i2c_id);
 
