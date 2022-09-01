@@ -74,6 +74,7 @@ static const unsigned int kMajorBlockScsiN = 133;
 static const unsigned int kMajorBlockScsiO = 134;
 static const unsigned int kMajorBlockScsiP = 135;
 static const unsigned int kMajorBlockMmc = 179;
+static const unsigned int kMajorBlockPcie = 259;
 static const unsigned int kMajorBlockExperimentalMin = 240;
 static const unsigned int kMajorBlockExperimentalMax = 254;
 
@@ -261,6 +262,17 @@ status_t Disk::readMetadata() {
         mLabel = tmp;
         break;
     }
+    case kMajorBlockPcie: {
+        std::string path(mSysPath + "/device/model");
+        std::string tmp;
+        if (!ReadFileToString(path, &tmp)) {
+            PLOG(WARNING) << "Failed to read model from " << path;
+            return -errno;
+        }
+        tmp = android::base::Trim(tmp);
+        mLabel = tmp;
+        break;
+    }
     case kMajorBlockMmc: {
         std::string path(mSysPath + "/device/manfid");
         std::string tmp;
@@ -409,6 +421,7 @@ status_t Disk::readPartitions() {
                     case 0x0b:  // W95 FAT32 (LBA)
                     case 0x0c:  // W95 FAT32 (LBA)
                     case 0x0e:  // W95 FAT16 (LBA)
+                    case 0x83:  // W95 FAT16 (LBA)
                         createPublicVolume(partDevice);
                         break;
                 }
@@ -597,6 +610,16 @@ int Disk::getMaxMinors() {
         return 15;
     }
     case kMajorBlockMmc: {
+        // Per Documentation/devices.txt this is dynamic
+        std::string tmp;
+        if (!ReadFileToString(kSysfsMmcMaxMinors, &tmp) &&
+                !ReadFileToString(kSysfsMmcMaxMinorsDeprecated, &tmp)) {
+            LOG(ERROR) << "Failed to read max minors";
+            return -errno;
+        }
+        return std::stoi(tmp);
+    }
+    case kMajorBlockPcie: {
         // Per Documentation/devices.txt this is dynamic
         std::string tmp;
         if (!ReadFileToString(kSysfsMmcMaxMinors, &tmp) &&

@@ -52,6 +52,8 @@ public:
         kUsb = 1 << 3,
         /* Flag that disk is EMMC internal */
         kEmmc = 1 << 4,
+        /* Flag that disk is PCIE storage */
+        kPcie = 1 << 5,
     };
 
     const std::string& getId() { return mId; }
