@@ -1740,8 +1740,10 @@ cleanup:
 	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 	spin_unlock(&xhci->lock);
 #ifdef CONFIG_AMLOGIC_USB
-	if (!(temp & PORT_CONNECT) || !(temp & PORT_PE))
-		set_usb_phy_host_tuning(faked_port_index, 1);
+	if (bpi_amlogic_usb3()) {
+		if (!(temp & PORT_CONNECT) || !(temp & PORT_PE))
+			set_usb_phy_host_tuning(faked_port_index, 1);
+	}
 #endif
 	/* Pass this up to the core */
 	usb_hcd_poll_rh_status(hcd);

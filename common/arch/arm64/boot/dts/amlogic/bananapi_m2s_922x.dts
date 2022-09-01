@@ -21,7 +21,7 @@
 #include "mesong12b.dtsi"
 
 / {
-	model = "Amlogic";
+	model = "Bananapi BPI-M2S";
 	amlogic-dt-id = "bananapi_m2s_922x";
 	compatible = "amlogic, g12b";
 	interrupt-parent = <&gic>;

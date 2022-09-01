@@ -1317,13 +1317,15 @@ int usb_hcd_check_unlink_urb(struct usb_hcd *hcd, struct urb *urb,
 	}
 
 #ifdef CONFIG_AMLOGIC_USB
-	if (!(HCD_DWC_OTG(hcd))) {
-		if (tmp != &urb->urb_list)
-			return -EIDRM;
-	}
-#else
+	if (HCD_DWC_OTG(hcd))
+		goto err_usb_hcd_check_unlink_urb;
+#endif
+
 	if (tmp != &urb->urb_list)
 		return -EIDRM;
+
+#ifdef CONFIG_AMLOGIC_USB
+err_usb_hcd_check_unlink_urb:
 #endif
 
 	/* Any status except -EINPROGRESS means something already started to

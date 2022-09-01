@@ -4,6 +4,8 @@
 #include <linux/mod_devicetable.h>
 #include <linux/usb/ch9.h>
 
+#include <linux/platform_data/board_bananapi.h>
+
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 

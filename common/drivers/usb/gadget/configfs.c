@@ -9,6 +9,10 @@
 #include "u_f.h"
 #include "u_os_desc.h"
 
+#ifdef CONFIG_AMLOGIC_USB
+#include <linux/usb.h>
+#endif
+
 #ifdef CONFIG_USB_CONFIGFS_UEVENT
 #include <linux/platform_device.h>
 #include <linux/kdev_t.h>
@@ -1298,7 +1302,8 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 	cdev->gadget = gadget;
 	set_gadget_data(gadget, cdev);
 #ifdef CONFIG_AMLOGIC_USB
-	wakeup_source_init(&Gadget_Lock.wakesrc, "gadget-connect");
+	if (bpi_amlogic_usb3())
+		wakeup_source_init(&Gadget_Lock.wakesrc, "gadget-connect");
 #endif
 	ret = composite_dev_prepare(composite, cdev);
 	if (ret)
@@ -1465,7 +1470,8 @@ static void android_work(struct work_struct *data)
 		pr_info("%s: sent uevent %s\n", __func__, configured[0]);
 		uevent_sent = true;
 #ifdef CONFIG_AMLOGIC_USB
-		gadget_hold(&Gadget_Lock);
+		if (bpi_amlogic_usb3())
+			gadget_hold(&Gadget_Lock);
 #endif
 	}
 
@@ -1475,7 +1481,8 @@ static void android_work(struct work_struct *data)
 		pr_info("%s: sent uevent %s\n", __func__, disconnected[0]);
 		uevent_sent = true;
 #ifdef CONFIG_AMLOGIC_USB
-		gadget_drop(&Gadget_Lock);
+		if (bpi_amlogic_usb3())
+			gadget_drop(&Gadget_Lock);
 #endif
 	}
 
@@ -1502,7 +1509,8 @@ static void configfs_composite_unbind(struct usb_gadget *gadget)
 	composite_dev_cleanup(cdev);
 	usb_ep_autoconfig_reset(cdev->gadget);
 #ifdef CONFIG_AMLOGIC_USB
-	wakeup_source_trash(&Gadget_Lock.wakesrc);
+	if (bpi_amlogic_usb3())
+		wakeup_source_trash(&Gadget_Lock.wakesrc);
 #endif
 	cdev->gadget = NULL;
 	set_gadget_data(gadget, NULL);
