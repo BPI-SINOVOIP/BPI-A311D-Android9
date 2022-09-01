@@ -441,9 +441,11 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	char *ft_addr_bak;
 	ulong ft_len_bak;
 
+#if 0   //bpi, fix for coreelec multi-dtb boot
 	//try to do store dtb decrypt ${dtb_mem_addr}
 	//because if load dtb.img from cache/udisk maybe encrypted.
 	run_command("store dtb decrypt ${dtb_mem_addr}", 0);
+#endif
 
 	if (getenv("dtb_mem_addr"))
 		dtb_mem_addr = simple_strtoul(getenv("dtb_mem_addr"), NULL, 16);
