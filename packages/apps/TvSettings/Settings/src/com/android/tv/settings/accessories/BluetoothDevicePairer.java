@@ -130,7 +130,7 @@ public class BluetoothDevicePairer {
      * called and when we actually start pairing. This gives the caller a
      * chance to change their mind.
      */
-    public static final int DELAY_MANUAL_PAIRING = 5 * 1000;
+    public static final int DELAY_MANUAL_PAIRING = 0 * 1000;
     /**
      * If there was an error in pairing, we will wait this long before trying
      * again.
@@ -139,6 +139,7 @@ public class BluetoothDevicePairer {
 
     private static final int MSG_PAIR = 1;
     private static final int MSG_START = 2;
+    private static final int MSG_CONNECT_CHK = 3;
 
     private static final boolean DEBUG = true;
 
@@ -247,9 +248,13 @@ public class BluetoothDevicePairer {
 
     private final OpenConnectionCallback mOpenConnectionCallback = new OpenConnectionCallback() {
         public void succeeded() {
+            Log.d(TAG, "succeeded");
+            mHandler.removeMessages(MSG_CONNECT_CHK);
             setStatus(STATUS_NONE);
         }
         public void failed() {
+             Log.d(TAG, "failed");
+             mHandler.removeMessages(MSG_CONNECT_CHK);
             setStatus(STATUS_ERROR);
         }
     };
@@ -289,6 +294,12 @@ public class BluetoothDevicePairer {
                         break;
                     case MSG_START:
                         start();
+                        break;
+                    case MSG_CONNECT_CHK:
+                        if (mTarget.isConnected()) {
+                            Log.d(TAG, "device is connected.");
+                            setStatus(STATUS_NONE);
+                        }
                         break;
                     default:
                         Log.d(TAG, "No handler case available for message: " + msg.what);
@@ -359,6 +370,32 @@ public class BluetoothDevicePairer {
 
     public void clearDeviceList() {
         doCancel();
+        mVisibleDevices.clear();
+    }
+
+    public void cancelScanning() {
+        Log.d(TAG, "stopScanning");
+        // TODO allow cancel to be called from any state
+        if (isInProgress()) {
+            Log.d(TAG, "Pairing process has already begun, it can not be canceled.");
+            return;
+        }
+
+        // stop scanning, just in case we are
+        final boolean wasListening = BluetoothScanner.stopListening(mBtListener);
+        BluetoothScanner.stopNow();
+
+        mHandler.removeCallbacksAndMessages(null);
+
+        // remove bond, if existing
+        unpairDevice(mTarget);
+
+        mTarget = null;
+
+        setStatus(STATUS_NONE);
+
+        Log.d(TAG, "doCancel and wasListening is " + wasListening);
+
         mVisibleDevices.clear();
     }
 
@@ -440,6 +477,7 @@ public class BluetoothDevicePairer {
 
     private void startPairing(BluetoothDevice device, boolean isManual) {
         // TODO check if we're already paired/bonded to this device
+        Log.d(TAG, "startPairing " + device + " isManual = " + isManual);
 
         // cancel auto-mode if applicable
         mAutoMode = !isManual;
@@ -546,6 +584,7 @@ public class BluetoothDevicePairer {
 
         setStatus(STATUS_NONE);
 
+        Log.d(TAG, "doCancel and wasListening is " + wasListening);
         // resume scanning
         if (wasListening) {
             start();
@@ -556,6 +595,7 @@ public class BluetoothDevicePairer {
      * Set the status and update any listener.
      */
     private void setStatus(int status) {
+        Log.d(TAG, "setStatus = " + status);
         mStatus = status;
         updateListener();
     }
@@ -583,6 +623,7 @@ public class BluetoothDevicePairer {
         if (btConnector != null) {
             setStatus(STATUS_CONNECTING);
             btConnector.openConnection(adapter);
+             mHandler.sendEmptyMessageDelayed(MSG_CONNECT_CHK, 3000);
         } else {
             Log.w(TAG, "There was an error getting the BluetoothConnector.");
             setStatus(STATUS_ERROR);

@@ -743,4 +743,161 @@
     <string name="picture_in_picture_app_detail_summary" msgid="3478182415601436326">"允许应用在您打开应用时或您离开应用后（例如继续观看视频）创建画中画窗口。这类窗口会显示在您当前使用的其他应用的上层。"</string>
     <string name="special_access" msgid="3513811566600299998">"特殊应用权限"</string>
     <string name="string_concat" msgid="5897947064488902904">"<xliff:g id="PART1">%1s</xliff:g>，<xliff:g id="PART2">%2s</xliff:g>"</string>
+    <!-- Bluetooth interface -->
+    <string name="bluetooth">蓝牙</string>
+    <string name="bluetooth_rename">重命名</string>
+    <string name="bluetooth_refresh">刷新</string>
+    <string name="bluetooth_received">显示收到的文件</string>
+    <string name="avaliable_bluetooth">可用蓝牙</string>
+    <string name="bluetooth_is_discoverable" msgid="8373421452106840526">"附近所有蓝牙设备均可检测到此设备（<xliff:g id="DISCOVERABLE_TIME_PERIOD">%1$s</xliff:g>）"</string>
+    <string name="bluetooth_is_discoverable_always" msgid="2849387702249327748">"附近所有蓝牙设备均可检测到此设备"</string>
+    <string name="bluetooth_not_visible_to_other_devices" msgid="9120274591523391910">"其他蓝牙设备检测不到此设备"</string>
+    <string name="bluetooth_only_visible_to_paired_devices" msgid="2049983392373296028">"已配对的设备可检测到此设备"</string>
+    <string name="bluetooth_visibility_timeout" msgid="8002247464357005429">"检测超时设置"</string>
+    <string name="bluetooth_lock_voice_dialing" msgid="3139322992062086225">"锁定语音拨号"</string>
+    <string name="bluetooth_lock_voice_dialing_summary" msgid="4741338867496787042">"屏幕锁定时停止使用蓝牙拨号器"</string>
+    <string name="bluetooth_devices" msgid="1886018064039454227">"蓝牙设备"</string>
+    <string name="bluetooth_device_name" msgid="8415828355207423800">"设备名称"</string>
+    <string name="bluetooth_device_details" msgid="4594773497930028085">"设备设置"</string>
+    <string name="bluetooth_profile_details" msgid="6823621790324933337">"配置文件设置"</string>
+    <string name="bluetooth_name_not_set" msgid="2653752006416027426">"未设置名称，使用帐号名"</string>
+    <string name="bluetooth_scan_for_devices" msgid="9214184305566815727">"扫描设备"</string>
+    <string name="bluetooth_rename_device" msgid="4352483834491958740">"重命名此设备"</string>
+    <string name="bluetooth_rename_button" msgid="1648028693822994566">"重命名"</string>
+    <string name="bluetooth_disconnect_title" msgid="6026705382020027966">"要断开连接吗？"</string>
+    <string name="bluetooth_disconnect_all_profiles" msgid="9148530542956217908">"此操作将会断开您与以下设备的连接：&lt;br&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%1$s</xliff:g>&lt;/b&gt;"</string>
+    <string name="bluetooth_empty_list_user_restricted" msgid="603521233563983689">"您无权更改蓝牙设置。"</string>
+    <string name="bluetooth_is_visible_message" msgid="6222396240776971862">"在 <xliff:g id="DEVICE_NAME">%1$s</xliff:g> 上开启蓝牙设置后，附近的设备将可以检测到该设备。"</string>
+    <string name="bluetooth_is_disconnect_question" msgid="5334933802445256306">"要断开与<xliff:g id="DEVICE_NAME">%1$s</xliff:g>的连接吗？"</string>
+    <string name="bluetooth_broadcasting" msgid="16583128958125247">"广播"</string>
+    <string name="bluetooth_disable_profile_title" msgid="5916643979709342557">"要停用配置文件吗？"</string>
+    <string name="bluetooth_disable_profile_message" msgid="2895844842011809904">"此操作将停用：&lt;br&gt;&lt;b&gt;<xliff:g id="PROFILE_NAME">%1$s</xliff:g>&lt;/b&gt;&lt;br&gt;&lt;br&gt;来自：&lt;br&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%2$s</xliff:g>&lt;/b&gt;"</string>
+    <string name="bluetooth_unknown" msgid="644716244548801421"></string>
+    <string name="bluetooth_device" msgid="5291950341750186887">"未命名的蓝牙设备"</string>
+    <string name="bluetooth_no_devices_found" msgid="1085232930277181436">"未在附近找到蓝牙设备。"</string>
+    <string name="bluetooth_notif_ticker" msgid="4726721390078512173">"蓝牙配对请求"</string>
+    <string name="bluetooth_notif_title" msgid="2485175521845371514">"配对请求"</string>
+    <string name="bluetooth_notif_message" msgid="5057417127600942904">"点按即可与“<xliff:g id="DEVICE_NAME">%1$s</xliff:g>”配对。"</string>
+    <string name="bluetooth_show_received_files" msgid="5164787486105868895">"显示收到的文件"</string>
+    <string name="bluetooth_ask_enablement" msgid="1712443355224737143">"某个应用想要开启此设备的蓝牙功能。"</string>
+    <string name="bluetooth_ask_discovery" product="tablet" msgid="786921566047356213">"某个应用想让其他蓝牙设备在 <xliff:g id="TIMEOUT">%1$d</xliff:g> 秒内可检测到您的平板电脑。"</string>
+    <string name="bluetooth_ask_discovery" product="default" msgid="5510358858113713272">"某个应用想让其他蓝牙设备在 <xliff:g id="TIMEOUT">%1$d</xliff:g> 秒内可检测到您的手机。"</string>
+    <string name="bluetooth_ask_lasting_discovery" product="tablet" msgid="8863617309580598607">"某个应用想让其他蓝牙设备检测到您的平板电脑。之后，您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_ask_lasting_discovery" product="default" msgid="6487606808683607975">"某个应用想让其他蓝牙设备检测到您的手机。之后，您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_ask_start_broadcast" product="default" msgid="3535628155254187911">"“<xliff:g id="APP_NAME">%1$s</xliff:g>”请求开启蓝牙广播功能，以便与附近的其他设备通信。稍后您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_ask_enablement_and_start_broadcast" product="default" msgid="8810858601242763295">"“<xliff:g id="APP_NAME">%1$s</xliff:g>”请求开启蓝牙和蓝牙广播功能，以便与附近的其他设备通信。稍后您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_broadcasting_explaination" product="default" msgid="4249322115655011799">"开启此功能后，您的手机就可以与附近的其他设备通信。\n\n广播功能会使用低电耗的蓝牙信号。"</string>
+    <string name="bluetooth_ask_enablement_and_discovery" product="tablet" msgid="3346529092809011149">"某个应用想要打开蓝牙，以便其他设备在 <xliff:g id="TIMEOUT">%1$d</xliff:g> 秒内可检测到您的平板电脑。"</string>
+    <string name="bluetooth_ask_enablement_and_discovery" product="default" msgid="4724094889807196118">"某个应用想要打开蓝牙，以便其他设备在 <xliff:g id="TIMEOUT">%1$d</xliff:g> 秒内可检测到您的手机。"</string>
+    <string name="bluetooth_ask_enablement_and_lasting_discovery" product="tablet" msgid="989613204829097159">"某个应用想要打开蓝牙，以便其他设备可检测到您的平板电脑。之后，您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_ask_enablement_and_lasting_discovery" product="default" msgid="6671615712909139801">"某个应用想要打开蓝牙，以便其他设备可检测到您的手机。之后，您可以在“蓝牙”设置中更改此设置。"</string>
+    <string name="bluetooth_turning_on" msgid="4850574877288036646">"正在打开蓝牙..."</string>
+    <string name="bluetooth_turning_off" msgid="2337747302892025192">"正在关闭蓝牙…"</string>
+    <string name="bluetooth_auto_connect" msgid="40711424456733571">"自动连接"</string>
+    <string name="bluetooth_connection_permission_request" msgid="4747918249032890077">"蓝牙连接请求"</string>
+    <string name="bluetooth_connection_notif_message" msgid="3603316575471431846">"点按即可连接到“<xliff:g id="DEVICE_NAME">%1$s</xliff:g>”。"</string>
+    <string name="bluetooth_connection_dialog_text" msgid="8455427559949998023">"要连接到“<xliff:g id="DEVICE_NAME">%1$s</xliff:g>”吗？"</string>
+    <string name="bluetooth_phonebook_request" msgid="3951420080540915279">"电话簿权限申请"</string>
+    <string name="bluetooth_pb_acceptance_dialog_text" msgid="6555508756987053866">"%1$s想要使用您的通讯录和通话记录。要向%2$s授予权限吗？"</string>
+    <string name="bluetooth_remember_choice" msgid="6919682671787049800">"不要再询问"</string>
+    <string name="bluetooth_pb_remember_choice" msgid="3622898084442402071">"下次不再询问"</string>
+    <string name="bluetooth_map_request" msgid="4595727689513143902">"消息权限申请"</string>
+    <string name="bluetooth_map_acceptance_dialog_text" msgid="8712508202081143737">"“%1$s”想要查看您的消息。要向“%2$s”授予权限吗？"</string>
+    <string name="bluetooth_sap_request" msgid="2669762224045354417">"SIM 访问权限请求"</string>
+    <string name="bluetooth_sap_acceptance_dialog_text" msgid="4414253873553608690">"<xliff:g id="DEVICE_NAME_0">%1$s</xliff:g>想要访问您的 SIM 卡。如果授权该设备访问 SIM 卡，您设备的数据连接功能在蓝牙连接期间将停用。将访问权限授予<xliff:g id="DEVICE_NAME_1">%2$s?</xliff:g>"</string>
+    <string name="bluetooth_quick_toggle_title" msgid="1037056952714061893">"蓝牙"</string>
+    <string name="bluetooth_quick_toggle_summary" msgid="5293641680139873341">"打开蓝牙"</string>
+    <string name="bluetooth_settings" msgid="1810521656168174329">"蓝牙"</string>
+    <string name="bluetooth_settings_title" msgid="1908745291161353016">"蓝牙"</string>
+    <string name="bluetooth_settings_summary" msgid="2091062709530570462">"管理连接、设置设备名称和可检测性"</string>
+    <string name="bluetooth_pairing_key_msg" msgid="418124944140102021">"蓝牙配对码"</string>
+    <string name="bluetooth_enable_alphanumeric_pin" msgid="7222713483058171357">"PIN码由字母或符号组成"</string>
+    <string name="bluetooth_pin_values_hint_16_digits" msgid="7849359451584101077">"必须为 16 位数字"</string>
+    <string name="bluetooth_enter_pin_other_device" msgid="4637977124526813470">"您可能还需要在另一设备上输入此PIN码。"</string>
+    <string name="bluetooth_enter_passkey_other_device" msgid="2798719004030279602">"您可能还需要在另一台设备上输入此密钥。"</string>
+    <string name="bluetooth_pairing_shares_phonebook" msgid="2277931851483023208">"允许<xliff:g id="DEVICE_NAME">%1$s</xliff:g>访问您的通讯录和通话记录"</string>
+    <string name="bluetooth_error_title" msgid="6850384073923533096"></string>
+    <string name="bluetooth_connecting_error_message" msgid="1397388344342081090">"无法连接到<xliff:g id="DEVICE_NAME">%1$s</xliff:g>。"</string>
+    <string name="bluetooth_preference_scan_title" msgid="2277464653118896016">"扫描设备"</string>
+    <string name="bluetooth_search_for_devices" msgid="2754007356491461674">"刷新"</string>
+    <string name="bluetooth_searching_for_devices" msgid="9203739709307871727">"正在搜索..."</string>
+    <string name="bluetooth_preference_device_settings" msgid="907776049862799122">"设备设置"</string>
+    <string name="bluetooth_preference_paired_dialog_title" msgid="8875124878198774180">"已配对的设备"</string>
+    <string name="bluetooth_preference_paired_dialog_name_label" msgid="8111146086595617285">"名称"</string>
+    <string name="bluetooth_preference_paired_dialog_internet_option" msgid="7112953286863428412">"互联网连接"</string>
+    <string name="bluetooth_preference_paired_dialog_keyboard_option" msgid="2271954176947879628">"键盘"</string>
+    <string name="bluetooth_preference_paired_dialog_contacts_option" msgid="7747163316331917594">"通讯录和通话记录"</string>
+    <string name="bluetooth_pairing_dialog_title" msgid="1417255032435317301">"要与此设备配对吗？"</string>
+    <string name="bluetooth_pairing_dialog_sharing_phonebook_title" msgid="7664141669886358618">"要共享电话簿吗？"</string>
+    <string name="bluetooth_pairing_dialog_contants_request" msgid="5531109163573611348">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>想要使用您的通讯录和通话记录。"</string>
+    <string name="bluetooth_pairing_dialog_paring_request" msgid="8451248193517851958">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>想通过蓝牙与您的设备配对。连接后，此设备将可以使用您的通讯录和通话记录。"</string>
+    <string name="bluetooth_preference_paired_devices" msgid="1970524193086791964">"已配对的设备"</string>
+    <string name="bluetooth_preference_found_devices" msgid="1647983835063249680">"可用设备"</string>
+    <string name="bluetooth_preference_no_found_devices" msgid="7594339669961811591">"未找到任何设备"</string>
+    <string name="bluetooth_device_context_connect" msgid="3997659895003244941">"连接"</string>
+    <string name="bluetooth_device_context_disconnect" msgid="8220072022970148683">"断开连接"</string>
+    <string name="bluetooth_device_context_pair_connect" msgid="7611522504813927727">"配对和连接"</string>
+    <string name="bluetooth_device_context_unpair" msgid="662992425948536144">"取消配对"</string>
+    <string name="bluetooth_device_context_disconnect_unpair" msgid="7644014238070043798">"断开连接和取消配对"</string>
+    <string name="bluetooth_device_context_connect_advanced" msgid="2643129703569788771">"选项…"</string>
+    <string name="bluetooth_menu_advanced" msgid="8572178316357220524">"高级"</string>
+    <string name="bluetooth_advanced_titlebar" msgid="2142159726881547669">"高级蓝牙设置"</string>
+    <string name="bluetooth_empty_list_bluetooth_off" msgid="6351930724051893423">"开启蓝牙后，您的设备可以与附近的其他蓝牙设备通信。"</string>
+    <string name="bluetooth_connect_specific_profiles_title" msgid="6952214406025825164">"连接到..."</string>
+    <string name="bluetooth_disconnect_a2dp_profile" msgid="3524648279150937177">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>将与媒体音频断开连接。"</string>
+    <string name="bluetooth_disconnect_headset_profile" msgid="8635908811168780720">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>将与免提音频断开连接。"</string>
+    <string name="bluetooth_disconnect_hid_profile" msgid="3282295189719352075">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>将与输入设备断开连接。"</string>
+    <string name="bluetooth_disconnect_pan_user_profile" msgid="8037627994382458698">"经由<xliff:g id="DEVICE_NAME">%1$s</xliff:g>的互联网连接将会断开。"</string>
+    <string name="bluetooth_disconnect_pan_nap_profile" product="tablet" msgid="1262792320446274407">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>将断开而不再共享该平板电脑的互联网连接。"</string>
+    <string name="bluetooth_disconnect_pan_nap_profile" product="default" msgid="5700332050175684571">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>将断开而不再共享该手机的互联网连接。"</string>
+    <string name="bluetooth_device_advanced_title" msgid="6066342531927499308">"已配对的蓝牙设备"</string>
+    <string name="bluetooth_device_advanced_online_mode_title" msgid="3689050071425683114">"连接"</string>
+    <string name="bluetooth_device_advanced_online_mode_summary" msgid="1204424107263248336">"连接到蓝牙设备"</string>
+    <string name="bluetooth_device_advanced_profile_header_title" msgid="102745381968579605">"用于"</string>
+    <string name="bluetooth_device_advanced_rename_device" msgid="5148578059584955791">"重命名"</string>
+    <string name="bluetooth_device_advanced_enable_opp_title" msgid="8222550640371627365">"允许传入文件"</string>
+    <string name="bluetooth_pan_user_profile_summary_connected" msgid="4602294638909590612">"经由其他设备连接到互联网"</string>
+    <string name="bluetooth_pan_nap_profile_summary_connected" msgid="1561383706411975199">"与其他设备共享该设备的互联网连接"</string>
+    <string name="bluetooth_dock_settings" msgid="3218335822716052885">"基座设置"</string>
+    <string name="bluetooth_dock_settings_title" msgid="5543069893044375188">"将基座用于音频"</string>
+    <string name="bluetooth_dock_settings_headset" msgid="1001821426078644650">"将基座用作免提电话"</string>
+    <string name="bluetooth_dock_settings_a2dp" msgid="8791004998846630574">"用于音乐和媒体"</string>
+    <string name="bluetooth_dock_settings_remember" msgid="5551459057010609115">"记住设置"</string>
+    <string name="tether_settings_title_bluetooth" msgid="355855408317564420">"蓝牙网络共享"</string>
+    <string name="tether_settings_title_usb_bluetooth" msgid="5355828977109785001">"网络共享"</string>
+    <string name="bluetooth_tether_checkbox_text" msgid="2379175828878753652">"蓝牙网络共享"</string>
+
+    <string name="bluetooth_untether_blank" msgid="2871192409329334813">"即将断开与<xliff:g id="DEVICE_NAME">%1$s</xliff:g>的网络共享。"</string>
+    <string name="location_scanning_bluetooth_always_scanning_title" msgid="5444989508204520019">"蓝牙扫描"</string>
+    <string name="location_scanning_bluetooth_always_scanning_description" msgid="8602726521250591852">"允许系统应用和服务随时检测蓝牙设备，以便提高位置信息的精确度。"</string>
+    <string name="bluetooth_on_time" msgid="3056108148042308690">"WLAN开启时间"</string>
+    <string name="power_bluetooth" msgid="4373329044379008289">"蓝牙"</string>
+    <string name="battery_action_bluetooth" msgid="8374789049507723142">"蓝牙设置"</string>
+    <string name="battery_desc_bluetooth" msgid="8069070756186680367">"蓝牙所耗的电量"</string>
+    <string name="battery_sugg_bluetooth_basic" msgid="4565141162650835009">"请在不使用蓝牙功能时将其关闭"</string>
+    <string name="battery_sugg_bluetooth_headset" msgid="4071352514714259230">"尝试连接另一蓝牙设备"</string>
+    <string name="gadget_toggle_bluetooth" msgid="7538903239807020826">"正在更新蓝牙设置"</string>
+    <string name="gadget_bluetooth" msgid="8998572807378694410">"蓝牙"</string>
+    <string name="restriction_bluetooth_config_title" msgid="8871681580962503671">"蓝牙"</string>
+    <string name="restriction_bluetooth_config_summary" msgid="8372319681287562506">"允许修改蓝牙配对和设置"</string>
+    <string name="bluetooth_disabled" msgid="1558295505487648234">"已停用"</string>
+    <string name="bluetooth_talkback_computer" msgid="4875089335641234463">"计算机"</string>
+    <string name="bluetooth_talkback_headset" msgid="5140152177885220949">"耳麦"</string>
+    <string name="bluetooth_talkback_phone" msgid="4260255181240622896">"手机"</string>
+    <string name="bluetooth_talkback_imaging" msgid="551146170554589119">"成像设备"</string>
+    <string name="bluetooth_talkback_headphone" msgid="26580326066627664">"耳机"</string>
+    <string name="bluetooth_talkback_input_peripheral" msgid="5165842622743212268">"外围输入设备"</string>
+    <string name="bluetooth_talkback_bluetooth" msgid="5615463912185280812">"蓝牙"</string>
+    <string name="forget">忘记</string>
+    <!-- Strings for Dialog allow button -->
+    <string name="allow">允许</string>
+    <!-- Strings for Dialog deny button -->
+    <string name="deny">拒绝</string>
+    <string name="progress_scanning">搜索中</string>
+    <string name="wifi_in_airplane_mode">飞行模式</string>
+
+
+    <string name="yes">"是"</string>
+    <!-- Strings for Dialog no button -->
+    <string name="no">"否"</string>
 </resources>

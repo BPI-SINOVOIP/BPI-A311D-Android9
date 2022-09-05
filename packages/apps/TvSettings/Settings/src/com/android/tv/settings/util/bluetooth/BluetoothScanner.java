@@ -39,7 +39,7 @@ public class BluetoothScanner {
     private static final int FOUND_ON_SCAN = -1;
     private static final int CONSECUTIVE_MISS_THRESHOLD = 4;
     private static final int FAILED_SETTING_NAME = CONSECUTIVE_MISS_THRESHOLD + 1;
-    private static final int SCAN_DELAY = 4000;
+    private static final int SCAN_DELAY = 0;
 
     private static Receiver sReceiver;
 
@@ -271,6 +271,8 @@ public class BluetoothScanner {
         }
 
         public void scanNow() {
+            Log.d(TAG, "scanNow");
+
             // If we're already discovering, stop it.
             if (mBtAdapter.isDiscovering()) {
                 mBtAdapter.cancelDiscovery();

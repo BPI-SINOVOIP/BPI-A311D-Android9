@@ -42,6 +42,10 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="com.google.android.assistant.READ_HOTWORD_STATE" />
     <uses-permission android:name="com.google.android.assistant.WRITE_HOTWORD_STATE" />
+    <uses-permission android:name="com.android.setupwizard.permission.SETUP"/>
+
+
+    <protected-broadcast android:name="android.btopp.intent.action.OPEN_RECEIVED_FILES" />
 
     <application
         android:icon="@drawable/logo_settings_color_48dp"
@@ -466,6 +470,19 @@
             <intent-filter>
                 <action android:name="com.google.android.intent.action.CONNECT_INPUT" />
 
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".accessories.AutoPairActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:persistableMode="persistNever">
+            <intent-filter>
+                <action android:name="com.android.setupwizard.action.HOOK_BEGIN" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

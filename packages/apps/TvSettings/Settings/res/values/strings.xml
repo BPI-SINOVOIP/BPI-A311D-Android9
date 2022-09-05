@@ -1646,4 +1646,233 @@
 
     <!-- concat two strings, e.g. "Android Keyboard, My Pass" [CHAR LIMIT=NONE] -->
     <string name="string_concat"><xliff:g id="part1">%1s</xliff:g>, <xliff:g id="part2">%2s</xliff:g></string>
+     <!-- Bluetooth interface -->
+    <string name="bluetooth">Bluetooth</string>
+    <string name="bluetooth_rename">Rename</string>
+    <string name="bluetooth_refresh">Refresh</string>
+    <string name="bluetooth_received">Display received files</string>
+    <string name="avaliable_bluetooth">Available bluetooth</string>
+    <string name="bluetooth_is_discoverable">Visible to all nearby Bluetooth devices (<xliff:g id="discoverable_time_period">%1$s</xliff:g>)</string>
+    <string name="bluetooth_is_discoverable_always">Visible to all nearby Bluetooth devices</string>
+    <string name="bluetooth_not_visible_to_other_devices">Not visible to other Bluetooth devices</string>
+    <string name="bluetooth_only_visible_to_paired_devices">Only visible to paired devices</string>
+    <string name="bluetooth_visibility_timeout">Visibility timeout</string>
+    <string name="bluetooth_lock_voice_dialing">Lock voice dialing</string>
+    <string name="bluetooth_devices">Bluetooth devices</string>
+    <string name="bluetooth_device_name">Device name</string>
+    <string name="bluetooth_device_details">Device settings</string>
+    <string name="bluetooth_profile_details">Profile settings</string>
+    <string name="bluetooth_name_not_set">No name set, using account name</string>
+    <string name="bluetooth_scan_for_devices">Scan for devices</string>
+    <string name="bluetooth_rename_device">Rename this device</string>
+    <string name="bluetooth_rename_button">Rename</string>
+    <string name="bluetooth_disconnect_title">Disconnect?</string>
+    <string name="bluetooth_disconnect_all_profiles">This will end your connection with:&lt;br>&lt;b><xliff:g id="device_name">%1$s</xliff:g>&lt;/b></string>
+    <string name="bluetooth_empty_list_user_restricted">You don\u2019t have permission to change Bluetooth settings.</string>
+    <string name="bluetooth_is_visible_message"><xliff:g id="device_name">%1$s</xliff:g> is visible to nearby devices while Bluetooth settings is open.</string>
+    <string name="bluetooth_is_disconnect_question">Disconnect <xliff:g id="device_name">%1$s</xliff:g>?</string>
+    <string name="bluetooth_broadcasting">Broadcasting</string>
+    <string name="bluetooth_disable_profile_title">Disable profile?</string>
+    <string name="bluetooth_disable_profile_message">This will disable:&lt;br>&lt;b><xliff:g id="profile_name">%1$s</xliff:g>&lt;/b>&lt;br>&lt;br>From:&lt;br>&lt;b><xliff:g id="device_name">%2$s</xliff:g>&lt;/b></string>
+    <string name="bluetooth_unknown" />
+    <string name="bluetooth_device">Unnamed Bluetooth device</string>
+    <string name="bluetooth_no_devices_found">No nearby Bluetooth devices were found.</string>
+    <string name="bluetooth_notif_ticker">Bluetooth pairing request</string>
+    <string name="bluetooth_notif_title">Pairing request</string>
+    <string name="bluetooth_notif_message">Tap to pair with <xliff:g id="device_name">%1$s</xliff:g>.</string>
+    <string name="bluetooth_show_received_files">Show received files</string>
+    <string name="device_picker">Choose Bluetooth device</string>
+    <string name="bluetooth_ask_enablement">An app wants to turn Bluetooth ON for this device.</string>
+    <string name="bluetooth_ask_discovery" product="default">An app wants to make your phone visible to other Bluetooth devices for <xliff:g id="timeout">%1$d</xliff:g> seconds.</string>
+    <string name="bluetooth_ask_lasting_discovery" product="default">An app wants to make your phone visible to other Bluetooth devices. You can change this later in Bluetooth settings.</string>
+    <string name="bluetooth_ask_start_broadcast" product="default"><xliff:g id="app_name">%1$s</xliff:g> wants to turn on Bluetooth broadcasting to communicate with other devices nearby. You can change this later in Bluetooth settings.</string>
+    <string name="bluetooth_ask_enablement_and_start_broadcast" product="default"><xliff:g id="app_name">%1$s</xliff:g> wants to turn on Bluetooth and Bluetooth broadcasting to communicate with other devices nearby. You can change this later in Bluetooth settings.</string>
+    <string name="bluetooth_broadcasting_explaination" product="default">When this feature is turned on, your phone can communicate with other devices nearby.\n\nBroadcasting uses low-power Bluetooth signals.</string>
+    <string name="bluetooth_ask_enablement_and_discovery">An app wants to turn on Bluetooth and make your tablet visible to other devices for <xliff:g id="timeout">%1$d</xliff:g> seconds.</string>
+    <string name="bluetooth_ask_enablement_and_lasting_discovery" product="default">An app wants to turn on Bluetooth and make your phone visible to other devices. You can change this later in Bluetooth settings.</string>
+    <string name="bluetooth_auto_connect">Auto-connect</string>
+    <string name="bluetooth_connection_permission_request">"Bluetooth connection request"</string>
+    <string name="bluetooth_connection_notif_message">"Tap to connect to \u0022<xliff:g id="device_name">%1$s</xliff:g>\u0022."</string>
+    <string name="bluetooth_connection_dialog_text">"Do you want to connect to \u0022<xliff:g id="device_name">%1$s</xliff:g>\u0022?"</string>
+    <string name="bluetooth_phonebook_request">"Phone book access request"</string>
+    <string name="bluetooth_pb_acceptance_dialog_text">%1$s wants to access your contacts and call history. Give access to %2$s?</string>
+    <string name="bluetooth_remember_choice">Don\u2019t ask again</string>
+    <string name="bluetooth_pb_remember_choice">Don\u2019t ask again</string>
+    <string name="bluetooth_map_request">"Message access request"</string>
+    <string name="bluetooth_map_acceptance_dialog_text">%1$s wants to access your messages. Give access to %2$s?</string>
+    <string name="bluetooth_sap_request">"SIM access request"</string>
+    <string name="bluetooth_sap_acceptance_dialog_text"><xliff:g id="device_name">%1$s</xliff:g> wants to access your SIM card. Granting access to the SIM card will disable data connectivity on your device for the duration of the connection. Give access to <xliff:g id="device_name">%2$s?</xliff:g></string>
+    <string name="radio_controls_summary">Manage Wi\u2011Fi, Bluetooth, airplane mode, cellular networks, &amp; VPNs</string>
+    <string name="bluetooth_quick_toggle_title">Bluetooth</string>
+    <string name="bluetooth_quick_toggle_summary">Turn on Bluetooth</string>
+    <string name="bluetooth_settings">Bluetooth</string>
+    <!--Wireless controls screen, settings title for the item to take you to the bluetooth settings screen -->
+    <string name="bluetooth_settings_title">Bluetooth</string>
+    <!--Wireless controls screen, settings summary for the item tot ake you to the bluetooth settings screen -->
+    <string name="bluetooth_settings_summary">Manage connections, set device name &amp; discoverability</string>
+    <!-- Message when bluetooth is informing the user of the pairing key. [CHAR LIMIT=NONE] -->
+    <string name="bluetooth_pairing_key_msg">Bluetooth pairing code</string>
+    <!-- Message when bluetooth dialog for passkey entry is showing. [CHAR LIMIT=NONE] -->
+    <string name="bluetooth_enable_alphanumeric_pin">PIN contains letters or symbols</string>
+    <!-- Bluetooth PIN hint text (below the text entry box). [CHAR LIMIT=30] -->
+    <!-- Bluetooth PIN hint text (below the text entry box). [CHAR LIMIT=30] -->
+    <string name="bluetooth_pin_values_hint_16_digits">Must be 16 digits</string>
+    <string name="bluetooth_enter_pin_other_device">You may also need to type this PIN on the other device.</string>
+    <string name="bluetooth_enter_passkey_other_device">You may also need to type this passkey on the other device.</string>
+    <!-- Message when bluetooth incoming pairing request for (2.1 devices) dialog is showing -->
+    <!-- Message when bluetooth dialog when passkey or pin needs to be displayed. -->
+    <string name="bluetooth_pairing_shares_phonebook">Allow <xliff:g id="device_name">%1$s</xliff:g> to access your contacts and call history</string>
+    <string name="bluetooth_error_title"></string>
+    <string name="bluetooth_connecting_error_message">Couldn\u2019t connect to <xliff:g id="device_name">%1$s</xliff:g>.</string>
+    <!-- Bluetooth settings: The title of the preference (list item) that initiates a scan for devices -->
+    <string name="bluetooth_preference_scan_title">Scan for devices</string>
+    <!-- Bluetooth settings: The title of the action button that initiates a search for nearby devices [CHAR LIMIT=20] -->
+    <string name="bluetooth_search_for_devices">Refresh</string>
+    <!-- Bluetooth settings: The title of the action button while a search for nearby devices is in progress [CHAR LIMIT=20] -->
+    <string name="bluetooth_searching_for_devices">Searching\u2026</string>
+    <!-- Bluetooth settings: The sub heading for device settings. [CHAR LIMIT=30] -->
+    <string name="bluetooth_preference_device_settings">Device settings</string>
+    <!-- Bluetooth settings: Paired dialog title [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_dialog_title">Paired device</string>
+    <!-- Bluetooth settings: Name label [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_dialog_name_label">Name</string>
+    <!-- Bluetooth settings: Checkbox label for enable/disable internet connection.  [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_dialog_internet_option">Internet connection</string>
+    <!-- Bluetooth settings: Checkbox label for enable/disable keyboard connection.  [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_dialog_keyboard_option">Keyboard</string>
+    <!-- Bluetooth settings: Checkbox label for enable/disable contacts connection.  [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_dialog_contacts_option">Contacts and call history</string>
+    <!-- Bluetooth settings: pairing dialog title.  [CHAR LIMIT=40] -->
+    <string name="bluetooth_pairing_dialog_title">Pair with this device?</string>
+    <!-- Bluetooth settings: share phone book title.  [CHAR LIMIT=40] -->
+    <string name="bluetooth_pairing_dialog_sharing_phonebook_title">Share phone book?</string>
+    <!-- Bluetooth settings: Message informing user that a bluetooth wants to access contant and call history.  [CHAR LIMIT=100] -->
+    <!-- Bluetooth settings: Message informing user that a bluetooth wants to access contant and call history.  [CHAR LIMIT=100] -->
+    <string name="bluetooth_pairing_dialog_contants_request"><xliff:g id="device_name">%1$s</xliff:g> wants to access your contacts and call history.</string>
+    <!-- Bluetooth settings: paring permission message.  [CHAR LIMIT=100] -->
+    <string name="bluetooth_pairing_dialog_paring_request"><xliff:g id="device_name">%1$s</xliff:g> wants to pair with Bluetooth. When connected, it will have access to your contacts and call history.</string>
+    <!-- Bluetooth settings: The sub heading for devices which have already been paired with this device. [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_paired_devices">Paired devices</string>
+    <!-- Bluetooth settings: The sub heading for available devices during and after scanning. [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_found_devices">Available devices</string>
+    <!-- Bluetooth settings: The message displayed if no Bluetooth devices were found. [CHAR LIMIT=40] -->
+    <!-- Bluetooth settings: The message displayed if no Bluetooth devices were found. [CHAR LIMIT=40] -->
+    <string name="bluetooth_preference_no_found_devices">No devices available</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will connect to all profiles on the device. -->
+    <string name="bluetooth_device_context_connect">Connect</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will disconnect from all profiles on the device. -->
+    <string name="bluetooth_device_context_disconnect">Disconnect</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will first pair, and then connect to all profiles on the device. -->
+    <string name="bluetooth_device_context_pair_connect">Pair &amp; connect</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will remove pairing with the device. -->
+    <string name="bluetooth_device_context_unpair">Unpair</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will disconnect and remove pairing with the device. -->
+    <string name="bluetooth_device_context_disconnect_unpair">Disconnect &amp; unpair</string>
+    <!-- Bluetooth settings.  Context menu item for a device.  Action will take the user to another screen where they can choose exactly which profiles to connect to. -->
+    <string name="bluetooth_device_context_connect_advanced">Options\u2026</string>
+    <!-- Bluetooth settings.  Menu option to Bluetooth advanced settings [CHAR LIMIT=20]-->
+    <!-- Bluetooth settings.  Menu option to Bluetooth advanced settings [CHAR LIMIT=20]-->
+    <string name="bluetooth_menu_advanced">Advanced</string>
+    <!-- Bluetooth settings. Title of the advanced bluetooth settings screen [CHAR LIMIT=30]-->
+    <!-- Bluetooth settings. Title of the advanced bluetooth settings screen [CHAR LIMIT=30]-->
+    <string name="bluetooth_advanced_titlebar">Advanced Bluetooth</string>
+    <!-- Bluetooth settings. Text displayed when Bluetooth is off and device list is empty [CHAR LIMIT=50]-->
+    <!-- Bluetooth settings. Text displayed when Bluetooth is off and device list is empty [CHAR LIMIT=50]-->
+    <string name="bluetooth_empty_list_bluetooth_off">When Bluetooth is turned on, your device can communicate with other nearby Bluetooth devices.</string>
+    <string name="bluetooth_connect_specific_profiles_title">Connect to\u2026</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the A2DP profile. [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_a2dp_profile"><xliff:g id="device_name">%1$s</xliff:g> will be disconnected from media audio.</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the headset profile. [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_headset_profile"><xliff:g id="device_name">%1$s</xliff:g> will be disconnected from handsfree audio.</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the HID profile. [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_hid_profile"><xliff:g id="device_name">%1$s</xliff:g> will be disconnected from input device.</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the PAN profile (user role). [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_pan_user_profile">Internet access via <xliff:g id="device_name">%1$s</xliff:g> will be disconnected.</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the PAN profile (NAP role). [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_pan_nap_profile" product="tablet"><xliff:g id="device_name">%1$s</xliff:g> will be disconnected from sharing this tablet\u2019s Internet connection.</string>
+    <!-- Bluetooth settings.  Message for disconnecting from the PAN profile (NAP role). [CHAR LIMIT=80] -->
+    <string name="bluetooth_disconnect_pan_nap_profile" product="default"><xliff:g id="device_name">%1$s</xliff:g> will be disconnected from sharing this phone\u2019s Internet connection.</string>
+    <!-- Bluetooth settings.  Connection options screen.  The title of the screen. [CHAR LIMIT=40] -->
+    <string name="bluetooth_device_advanced_title">Paired Bluetooth device</string>
+    <!-- Bluetooth settings.  Connection options screen.  The title of the checkbox that controls whether the device is in "online" mode or "offline" mode.  This essentially is the checkbox that controls whether any checks / unchecks on a profile should be applied immediately, or next time the device is connected. -->
+    <string name="bluetooth_device_advanced_online_mode_title">Connect</string>
+    <!-- Bluetooth settings.  Connection options screen.  The summary of the online mode checkbox.  This describes what the setting does in the context of the screen. -->
+    <string name="bluetooth_device_advanced_online_mode_summary">Connect to Bluetooth device</string>
+    <!-- Bluetooth settings.  Connection options screen.  The title of the header that is above all of the profiles.
+         When a user decides what Bluetooth capabilities to use with the device.  -->
+    <string name="bluetooth_device_advanced_profile_header_title">Use for</string>
+    <!-- Bluetooth settings. Connection options screen. Title for option to rename the device. [CHAR LIMIT=30] -->
+    <string name="bluetooth_device_advanced_rename_device">Rename</string>
+    <!-- Bluetooth settings. Connection options screen. Title for checkbox to enable incoming file transfers [CHAR LIMIT=30] -->
+    <string name="bluetooth_device_advanced_enable_opp_title">Allow incoming file transfers</string>
+    <!-- Bluetooth settings. Connection options screen. The summary for the checkbox preference when PAN is connected (user role). [CHAR LIMIT=25]-->
+    <string name="bluetooth_pan_user_profile_summary_connected">Connected to device for Internet access</string>
+    <!-- Bluetooth settings. Connection options screen. The summary for the checkbox preference when PAN is connected (NAP role). [CHAR LIMIT=25]-->
+    <string name="bluetooth_pan_nap_profile_summary_connected">Sharing local Internet connection with device</string>
+    <!-- Bluetooth settings.  Dock Setting Title -->
+    <string name="bluetooth_dock_settings">Dock Settings</string>
+    <!-- Bluetooth settings.  Dock Setting Dialog Title -->
+    <string name="bluetooth_dock_settings_title">Use dock for audio</string>
+    <!-- Bluetooth settings.  Dock Setting Dialog - Checkbox selection 1: Use dock as speaker phone -->
+    <string name="bluetooth_dock_settings_headset">As speaker phone</string>
+    <string name="power_bluetooth">Bluetooth</string>
+    <string name="battery_action_bluetooth">Bluetooth settings</string>
+    <string name="battery_desc_bluetooth">Battery used by Bluetooth</string>
+    <string name="battery_sugg_bluetooth_basic">Turn off Bluetooth when you aren\u2019t using it</string>
+    <string name="battery_sugg_bluetooth_headset">Try connecting to a different Bluetooth device</string>
+    <string name="gadget_toggle_bluetooth">Updating Bluetooth setting</string>
+    <string name="gadget_bluetooth">Bluetooth</string>
+    <string name="help_url_bluetooth" translatable="false"></string>
+    <string name="restriction_bluetooth_config_title">Bluetooth</string>
+    <string name="restriction_bluetooth_config_summary">Allow modification of Bluetooth pairings and settings</string>
+    <string name="keywords_voice_input">recognizer, input, speech, speak, language, hands-free, hand free, recognition, offensive, word, audio, history, bluetooth headset</string>
+    <string name="condition_airplane_summary">Wi-Fi, Bluetooth, and cellular network are turned off. You can\'t make phone calls or connect to the Internet.</string>
+    <string name="bluetooth_disabled">Disabled</string>
+    <string name="bluetooth_talkback_computer">Computer</string>
+    <string name="bluetooth_talkback_headset">Headset</string>
+    <string name="bluetooth_talkback_phone">Phone</string>
+    <string name="bluetooth_talkback_imaging">Imaging</string>
+    <string name="bluetooth_talkback_headphone">Headphone</string>
+    <string name="bluetooth_talkback_input_peripheral">Input Peripheral</string>
+    <string name="bluetooth_talkback_bluetooth">Bluetooth</string>
+        <string name="bluetooth_dock_settings_a2dp">For music and media</string>
+    <string name="bluetooth_dock_settings_remember">Remember settings</string>
+    <string name="storage_detail_dialog_other">Other includes shared files saved by apps, files downloaded from the Internet or Bluetooth, Android files, and so on.
+\n\nTo see the visible contents of this <xliff:g id="name" example="SD card">^1</xliff:g>, tap Explore.</string>
+    <string name="reset_network_desc">This will reset all network settings, including:\n\n<li>Wi\u2011Fi</li>\n<li>Cellular data</li>\n<li>Bluetooth</li>"</string>
+    <string name="tether_settings_title_bluetooth">Bluetooth tethering</string>
+    <string name="tether_settings_title_usb_bluetooth">Tethering</string>
+    <string name="bluetooth_tethering_off_subtext_config">Sharing this <xliff:g id="device_name">%1$d</xliff:g>\u2019s Internet connection</string>
+    <string name="bluetooth_tethering_overflow_error">Can\u2019t tether to more than <xliff:g id="maxConnection">%1$d</xliff:g> devices.</string>
+    <string name="bluetooth_untether_blank"><xliff:g id="device_name">%1$s</xliff:g> will be untethered.</string>
+    <string name="location_mode_high_accuracy_description">Use GPS, Wi\u2011Fi, Bluetooth, or cellular networks to determine location </string>
+    <string name="location_mode_battery_saving_description">Use Wi\u2011Fi, Bluetooth, or cellular networks to determine location</string>
+    <string name="location_scanning_bluetooth_always_scanning_title">Bluetooth scanning</string>
+    <string name="location_scanning_bluetooth_always_scanning_description">Improve location by allowing system apps and services to detect Bluetooth devices at any
+        time.</string>
+    <string name="bluetooth_on_time">Wi\u2011Fi on time</string>
+    <string name="wifi_in_airplane_mode">In Airplane mode</string>
+    <string name="bluetooth_paired">Paired devices</string>
+    <string name="bluetooth_turning_off">"Turning Bluetooth off\u2026"</string>
+    <string name="bluetooth_turning_on">"Turning Bluetooth on\u2026"</string>
+    <string name="forget">Forget</string>
+    <!-- Strings for Dialog allow button -->
+    <string name="allow">Allow</string>
+    <!-- Strings for Dialog deny button -->
+    <string name="deny">Deny</string>
+    <string name="progress_scanning">Searching</string>
+
+    <string name="yes">"Yes"</string>
+    <!-- Strings for Dialog no button -->
+    <string name="no">"No"</string>
+
+     <!-- auto pair -->
+    <string name="pair_searching">Searching</string>
+    <string name="pair_pairing">remote begines pairring</string>
+    <string name="pair_paired">remote is pairred</string>
+    <string name="pair_connecting">remote begines connecting</string>
+    <string name="pair_connected">remote is connected</string>
+    <string name="autopait_timeout_error">not find device, continue searching</string>
+    <string name="pair_fail">remote pairs fail</string>
+    <string name="pair_status_error">pair_status_error</string>
 </resources>
