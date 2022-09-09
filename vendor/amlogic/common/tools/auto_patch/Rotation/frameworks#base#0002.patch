@@ -1,0 +1,120 @@
+From dd22a61df62df37783c3ffbf1125ef10a9ef1f66 Mon Sep 17 00:00:00 2001
+From: "chunlong.cao" <chunlong.cao@amlogic.com>
+Date: Fri, 30 Oct 2020 19:36:46 +0800
+Subject: [PATCH] Rotation: [BDS][app][NextClass] APP rotation display on mipi
+ should the same as display on hdmi
+
+PD#SWPL-36019
+PD#SH-5654
+PD#SH-5688
+
+Problem:
+  sysytem is force to landscape but app need portrait UI
+
+Solution:
+  add rotation for display device
+
+Verify:
+  AC202 & W400
+
+Signed-off-by: chunlong.cao <chunlong.cao@amlogic.com>
+Change-Id: I33417bb809bef0fe3890580aeb5e32af2c8b8229
+---
+ .../hardware/display/DisplayManagerInternal.java     |  2 ++
+ .../server/display/DisplayManagerService.java        | 12 +++++++++++-
+ .../com/android/server/display/LogicalDisplay.java   |  6 +++++-
+ .../java/com/android/server/wm/DisplayContent.java   |  1 +
+ 4 files changed, 19 insertions(+), 2 deletions(-)
+ mode change 100755 => 100644 services/core/java/com/android/server/wm/DisplayContent.java
+
+diff --git a/core/java/android/hardware/display/DisplayManagerInternal.java b/core/java/android/hardware/display/DisplayManagerInternal.java
+index 504f840af5b..8dd227da233 100644
+--- a/core/java/android/hardware/display/DisplayManagerInternal.java
++++ b/core/java/android/hardware/display/DisplayManagerInternal.java
+@@ -117,6 +117,8 @@ public abstract class DisplayManagerInternal {
+      * surface flinger transaction.
+      */
+     public abstract void performTraversal(SurfaceControl.Transaction t);
++	
++	public void setRotation(int newRotation) {return;}
+ 
+     /**
+      * Tells the display manager about properties of the display that depend on the windows on it.
+diff --git a/services/core/java/com/android/server/display/DisplayManagerService.java b/services/core/java/com/android/server/display/DisplayManagerService.java
+index ddd8855f319..1f0c6589f41 100644
+--- a/services/core/java/com/android/server/display/DisplayManagerService.java
++++ b/services/core/java/com/android/server/display/DisplayManagerService.java
+@@ -1244,7 +1244,7 @@ public final class DisplayManagerService extends SystemService {
+                     + device.getDisplayDeviceInfoLocked());
+             return;
+         }
+-        display.configureDisplayLocked(t, device, info.state == Display.STATE_OFF);
++        display.configureDisplayLocked(t, device, info.state == Display.STATE_OFF,getRotation());
+ 
+         // Update the viewports if needed.
+         if (!mDefaultViewport.valid
+@@ -2120,6 +2120,12 @@ public final class DisplayManagerService extends SystemService {
+                     == PackageManager.PERMISSION_GRANTED;
+         }
+     }
++	
++	public int mRotation = 0;
++	
++	public int getRotation() {
++		return mRotation;
++	}
+ 
+     private final class LocalService extends DisplayManagerInternal {
+         @Override
+@@ -2196,6 +2202,10 @@ public final class DisplayManagerService extends SystemService {
+         public void getNonOverrideDisplayInfo(int displayId, DisplayInfo outInfo) {
+             getNonOverrideDisplayInfoInternal(displayId, outInfo);
+         }
++		
++		public void setRotation(int newRotation) {
++			mRotation = newRotation;
++		}
+ 
+         @Override
+         public void performTraversal(SurfaceControl.Transaction t) {
+diff --git a/services/core/java/com/android/server/display/LogicalDisplay.java b/services/core/java/com/android/server/display/LogicalDisplay.java
+index 1ae2f3552c5..f39eb88fc0d 100644
+--- a/services/core/java/com/android/server/display/LogicalDisplay.java
++++ b/services/core/java/com/android/server/display/LogicalDisplay.java
+@@ -307,7 +307,7 @@ final class LogicalDisplay {
+      */
+     public void configureDisplayLocked(SurfaceControl.Transaction t,
+             DisplayDevice device,
+-            boolean isBlanked) {
++            boolean isBlanked,int rotation) {
+         // Set the layer stack.
+         device.setLayerStackLocked(t, isBlanked ? BLANK_LAYER_STACK : mLayerStack);
+ 
+@@ -335,6 +335,10 @@ final class LogicalDisplay {
+         if ((displayDeviceInfo.flags & DisplayDeviceInfo.FLAG_ROTATES_WITH_CONTENT) != 0) {
+             orientation = displayInfo.rotation;
+         }
++		
++		if (displayDeviceInfo.type == Display.TYPE_BUILT_IN){
++				displayDeviceInfo.rotation = rotation;
++		}
+ 
+         // Apply the physical rotation of the display device itself.
+         orientation = (orientation + displayDeviceInfo.rotation) % 4;
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+old mode 100755
+new mode 100644
+index bb6bc99f8eb..c6daf522416
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -1114,6 +1114,7 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+             }, true /* traverseTopToBottom */);
+         }
+ 
++		mService.mDisplayManagerInternal.setRotation(rotation%2);
+         mService.mDisplayManagerInternal.performTraversal(getPendingTransaction());
+         scheduleAnimation();
+ 
+-- 
+2.28.0
+

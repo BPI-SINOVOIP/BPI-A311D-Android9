@@ -1,0 +1,39 @@
+From 9482d3db100bbaf83a87e957e09d4b1aeff36e4c Mon Sep 17 00:00:00 2001
+From: "lijun.meng" <lijun.meng@amlogic.com>
+Date: Tue, 29 Sep 2020 10:45:41 +0800
+Subject: [PATCH] Net: DHCP cannot obaint IP in IPV6 network  [3/3]
+
+PD#SH-5482
+
+Problem:
+DHCP cannot obaint IP in IPV6 network
+
+Solution:
+
+Verify:
+
+Change-Id: Id1fe1d90df4ced39fc4f76c6455af29792181320
+Signed-off-by: lijun.meng <lijun.meng@amlogic.com>
+---
+ java/com/android/server/ethernet/EthernetNetworkFactory.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ mode change 100755 => 100644 java/com/android/server/ethernet/EthernetNetworkFactory.java
+
+diff --git a/java/com/android/server/ethernet/EthernetNetworkFactory.java b/java/com/android/server/ethernet/EthernetNetworkFactory.java
+old mode 100755
+new mode 100644
+index 86df1ce..20af2cc
+--- a/java/com/android/server/ethernet/EthernetNetworkFactory.java
++++ b/java/com/android/server/ethernet/EthernetNetworkFactory.java
+@@ -416,7 +416,7 @@ public class EthernetNetworkFactory extends NetworkFactory {
+                         .build();
+             } else {
+                 provisioningConfiguration = IpClient.buildProvisioningConfiguration()
+-                        .withProvisioningTimeoutMs(0)
++                        //.withProvisioningTimeoutMs(0)
+                         .build();
+             }
+ 
+-- 
+2.28.0
+

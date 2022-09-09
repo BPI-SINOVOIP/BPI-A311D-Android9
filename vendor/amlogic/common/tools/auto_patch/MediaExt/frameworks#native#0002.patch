@@ -1,0 +1,37 @@
+From 6514de810978c33d3f1c318fe3646b2ec84a0b67 Mon Sep 17 00:00:00 2001
+From: Jian Wang <jian.wang@amlogic.com>
+Date: Tue, 11 Feb 2020 19:25:13 +0800
+Subject: [PATCH] av1: add dv with av1 support for mp4
+
+PD#SWPL-20356
+
+Problem:
+android p do not support dv with av1
+
+Solution:
+add dv with av1 support for mp4
+
+Verify:
+U212
+
+Change-Id: Id61a55c087a9cef8df56ac0b71e6231f8db4809a
+Signed-off-by: Jian Wang <jian.wang@amlogic.com>
+---
+ headers/media_plugin/media/openmax/OMX_VideoExt.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/headers/media_plugin/media/openmax/OMX_VideoExt.h b/headers/media_plugin/media/openmax/OMX_VideoExt.h
+index bbf157b..ad551a2 100644
+--- a/headers/media_plugin/media/openmax/OMX_VideoExt.h
++++ b/headers/media_plugin/media/openmax/OMX_VideoExt.h
+@@ -299,6 +299,7 @@ typedef enum OMX_VIDEO_DOLBYVISIONPROFILETYPE {
+     OMX_VIDEO_DolbyVisionProfileDvheDtb = 0x80,
+     OMX_VIDEO_DolbyVisionProfileDvheSt  = 0x100,
+     OMX_VIDEO_DolbyVisionProfileDvavSe  = 0x200,
++    OMX_VIDEO_DolbyVisionProfileDvav110  = 0x400,
+     OMX_VIDEO_DolbyVisionProfileMax     = 0x7FFFFFFF
+ } OMX_VIDEO_DOLBYVISIONPROFILETYPE;
+ 
+-- 
+1.9.1
+

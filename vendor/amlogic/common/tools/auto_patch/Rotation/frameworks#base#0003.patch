@@ -1,0 +1,48 @@
+From c2ac185989035e2d00401909e7ed76b713a88505 Mon Sep 17 00:00:00 2001
+From: "chunlong.cao" <chunlong.cao@amlogic.com>
+Date: Mon, 14 Dec 2020 15:47:18 +0800
+Subject: [PATCH] [HDMI][BDS]connect HDMI to 4k TV,Black edges on both sides of
+ the screen, not full screen
+
+PD#SWPL-38946
+
+Problem:
+  Scaled as panel
+
+Solution:
+  Force to full dsiplay for HDMI out
+
+Verify:
+  W400
+
+Signed-off-by: chunlong.cao <chunlong.cao@amlogic.com>
+Change-Id: I92ba3855a727c58801aca43f8e941723f417eeb6
+Signed-off-by: chunlong.cao <chunlong.cao@amlogic.com>
+---
+ .../com/android/server/display/LogicalDisplay.java     | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/display/LogicalDisplay.java b/services/core/java/com/android/server/display/LogicalDisplay.java
+index f39eb88fc0d..b750c05ccdd 100644
+--- a/services/core/java/com/android/server/display/LogicalDisplay.java
++++ b/services/core/java/com/android/server/display/LogicalDisplay.java
+@@ -371,7 +371,15 @@ final class LogicalDisplay {
+             displayRectHeight = displayInfo.logicalHeight * physWidth / displayInfo.logicalWidth;
+         } else {
+             // Pillar box.
+-            displayRectWidth = displayInfo.logicalWidth * physHeight / displayInfo.logicalHeight;
++			if( physWidth > physHeight && displayInfo.logicalWidth > displayInfo.logicalHeight)
++			{
++				displayRectWidth = physWidth;
++			}
++            else
++			{
++				displayRectWidth = displayInfo.logicalWidth * physHeight / displayInfo.logicalHeight;
++			}
++			
+             displayRectHeight = physHeight;
+         }
+         int displayRectTop = (physHeight - displayRectHeight) / 2;
+-- 
+2.28.0
+

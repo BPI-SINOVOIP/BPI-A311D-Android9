@@ -1,0 +1,226 @@
+From 29d8303d4b27222a2d326595abbbf1ab44a3775d Mon Sep 17 00:00:00 2001
+From: "chunlong.cao" <chunlong.cao@amlogic.com>
+Date: Fri, 17 Apr 2020 21:10:56 +0800
+Subject: [PATCH] system:[rotation]add X301 platform config for rotation
+
+PD#SWPL-23221
+
+Problem:
+	There is no X301 platform config for rotation
+
+Solution:
+	add X301 platform config for rotation
+
+Verify:
+	on X301 platform
+
+Signed-off-by: chunlong.cao <chunlong.cao@amlogic.com>
+Change-Id: I7fc7f7aa79add519d0e4741746b54717a1497b0e
+---
+ cmds/bootanimation/BootAnimation.cpp          | 29 ++++++++++++++++++-
+ cmds/bootanimation/BootAnimation.h            |  1 +
+ .../server/display/LocalDisplayAdapter.java   |  6 ++--
+ .../server/policy/PhoneWindowManager.java     | 18 ++++++------
+ .../com/android/server/wm/DisplayContent.java |  3 +-
+ 6 files changed, 43 insertions(+), 15 deletions(-)
+ mode change 100644 => 100755 cmds/bootanimation/BootAnimation.cpp
+ mode change 100644 => 100755 cmds/bootanimation/BootAnimation.h
+ mode change 100644 => 100755 services/core/java/com/android/server/display/LocalDisplayAdapter.java
+ mode change 100644 => 100755 services/core/java/com/android/server/policy/PhoneWindowManager.java
+ mode change 100644 => 100755 services/core/java/com/android/server/wm/DisplayContent.java
+
+diff --git a/cmds/bootanimation/BootAnimation.cpp b/cmds/bootanimation/BootAnimation.cpp
+old mode 100644
+new mode 100755
+index fd81128eeb7..3ad2a8aea49
+--- a/cmds/bootanimation/BootAnimation.cpp
++++ b/cmds/bootanimation/BootAnimation.cpp
+@@ -415,6 +415,16 @@ bool BootAnimation::bootVideo() {
+         return -1;
+ 
+     // create the native surface
++	if ( 1 == mRotation || 3 == mRotation) {
++		int temp = dinfo.h;
++		dinfo.h= dinfo.w;
++		dinfo.w= temp;
++	}
++	Rect destRect(dinfo.w, dinfo.h);
++	SurfaceComposerClient::Transaction tr;
++	tr.setDisplayProjection(dtoken, mRotation, destRect, destRect);
++	tr.apply();
++	
+     sp<SurfaceControl> control = session()->createSurface(String8("BootVideo"),
+             dinfo.w, dinfo.h, PIXEL_FORMAT_RGB_565);
+ 
+@@ -774,7 +784,7 @@ status_t BootAnimation::InputReaderThread::readyToRun() {
+ // ---------------------------------------------------------------------------------
+ BootAnimation::BootAnimation(sp<Callbacks> callbacks)
+         : Thread(false), mClockEnabled(true), mTimeIsAccurate(false),
+-        mTimeFormat12Hour(false), mTimeCheckThread(NULL), mCallbacks(callbacks) {
++        mTimeFormat12Hour(false), mTimeCheckThread(NULL), mCallbacks(callbacks), mRotation(0) {
+     mSession = new SurfaceComposerClient();
+ 
+     std::string powerCtl = android::base::GetProperty("sys.powerctl", "");
+@@ -783,6 +793,12 @@ BootAnimation::BootAnimation(sp<Callbacks> callbacks)
+     } else {
+         mShuttingDown = true;
+     }
++	
++	char rotate[PROPERTY_VALUE_MAX];
++	if (property_get("persist.sys.builtinrotation", rotate, "0") > 0)
++		mRotation = atoi(rotate);
++	else
++		ALOGD("BootAnimation get property error\n");
+ }
+ 
+ void BootAnimation::onFirstRef() {
+@@ -933,6 +949,17 @@ status_t BootAnimation::readyToRun() {
+         return -1;
+ 
+     // create the native surface
++	
++	if ( 1 == mRotation || 3 == mRotation) {
++		int temp = dinfo.h;
++		dinfo.h= dinfo.w;
++		dinfo.w= temp;
++	}
++	Rect destRect(dinfo.w, dinfo.h);
++	SurfaceComposerClient::Transaction tr;
++	tr.setDisplayProjection(dtoken, mRotation, destRect, destRect);
++	tr.apply();
++
+     sp<SurfaceControl> control = session()->createSurface(String8("BootAnimation"),
+             dinfo.w, dinfo.h, PIXEL_FORMAT_RGBA_8888);
+ 
+diff --git a/cmds/bootanimation/BootAnimation.h b/cmds/bootanimation/BootAnimation.h
+old mode 100644
+new mode 100755
+index deda2517dbf..755e28e6bd6
+--- a/cmds/bootanimation/BootAnimation.h
++++ b/cmds/bootanimation/BootAnimation.h
+@@ -225,6 +225,7 @@ private:
+     SortedVector<String8> mLoadedFiles;
+     sp<TimeCheckThread> mTimeCheckThread = nullptr;
+     sp<Callbacks> mCallbacks;
++	int         mRotation;
+ };
+ 
+ // ---------------------------------------------------------------------------
+diff --git a/services/core/java/com/android/server/display/LocalDisplayAdapter.java b/services/core/java/com/android/server/display/LocalDisplayAdapter.java
+old mode 100644
+new mode 100755
+index b9a279ad13e..21e25d502d3
+--- a/services/core/java/com/android/server/display/LocalDisplayAdapter.java
++++ b/services/core/java/com/android/server/display/LocalDisplayAdapter.java
+@@ -422,10 +422,8 @@ final class LocalDisplayAdapter extends DisplayAdapter {
+ 
+                     // For demonstration purposes, allow rotation of the external display.
+                     // In the future we might allow the user to configure this directly.
+-                    if ("portrait".equals(SystemProperties.get("persist.demo.hdmirotation"))) {
+-                        mInfo.rotation = Surface.ROTATION_270;
+-                    }
+-
++                    mInfo.rotation = SystemProperties.getInt("persist.sys.hdmirotation", 0);
++					
+                     // For demonstration purposes, allow rotation of the external display
+                     // to follow the built-in display.
+                     if (SystemProperties.getBoolean("persist.demo.hdmirotates", false)) {
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+old mode 100644
+new mode 100755
+index 80a5f419fe2..edeb4e634f3
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -591,7 +591,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private boolean mForceDefaultOrientation = false;
+ 
+     int mUserRotationMode = WindowManagerPolicy.USER_ROTATION_FREE;
+-    int mUserRotation = Surface.ROTATION_0;
++    int mUserRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+ 
+     boolean mSupportAutoRotation;
+     int mAllowAllRotations = -1;
+@@ -2391,8 +2391,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         if (width > height) {
+             shortSize = height;
+             longSize = width;
+-            mLandscapeRotation = Surface.ROTATION_0;
+-            mSeascapeRotation = Surface.ROTATION_180;
++            mLandscapeRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
++            mSeascapeRotation = (mLandscapeRotation + 2)%4;
+             if (res.getBoolean(com.android.internal.R.bool.config_reverseDefaultRotation)) {
+                 mPortraitRotation = Surface.ROTATION_90;
+                 mUpsideDownRotation = Surface.ROTATION_270;
+@@ -2403,8 +2403,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         } else {
+             shortSize = width;
+             longSize = height;
+-            mPortraitRotation = Surface.ROTATION_0;
+-            mUpsideDownRotation = Surface.ROTATION_180;
++            mPortraitRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
++            mUpsideDownRotation = (mLandscapeRotation + 2)%4;
+             if (res.getBoolean(com.android.internal.R.bool.config_reverseDefaultRotation)) {
+                 mLandscapeRotation = Surface.ROTATION_270;
+                 mSeascapeRotation = Surface.ROTATION_90;
+@@ -2529,7 +2529,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+ 
+             // Configure rotation lock.
+             int userRotation = Settings.System.getIntForUser(resolver,
+-                    Settings.System.USER_ROTATION, Surface.ROTATION_0,
++                    Settings.System.USER_ROTATION, SystemProperties.getInt("persist.sys.builtinrotation", 0),
+                     UserHandle.USER_CURRENT);
+             if (mUserRotation != userRotation) {
+                 mUserRotation = userRotation;
+@@ -7287,7 +7287,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         }
+ 
+         if (mForceDefaultOrientation) {
+-            return Surface.ROTATION_0;
++            return SystemProperties.getInt("persist.sys.builtinrotation", 0);
+         }
+ 
+         synchronized (mLock) {
+@@ -7300,7 +7300,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             if (!defaultDisplay) {
+                 // For secondary displays we ignore things like displays sensors, docking mode and
+                 // rotation lock, and always prefer a default rotation.
+-                preferredRotation = Surface.ROTATION_0;
++                preferredRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+             } else if (mLidState == LID_OPEN && mLidOpenRotation >= 0) {
+                 // Ignore sensor when lid switch is open and rotation is forced.
+                 preferredRotation = mLidOpenRotation;
+@@ -7445,7 +7445,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     if (preferredRotation >= 0) {
+                         return preferredRotation;
+                     }
+-                    return Surface.ROTATION_0;
++                    return SystemProperties.getInt("persist.sys.builtinrotation", 0);
+             }
+         }
+     }
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+old mode 100644
+new mode 100755
+index cd8fdbfbc64..bb6bc99f8eb
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -133,6 +133,7 @@ import android.os.Handler;
+ import android.os.IBinder;
+ import android.os.RemoteException;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import android.os.Trace;
+ import android.util.ArraySet;
+ import android.util.DisplayMetrics;
+@@ -259,7 +260,7 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+      *
+      * @see #updateRotationUnchecked()
+      */
+-    private int mRotation = 0;
++    private int mRotation = SystemProperties.getInt("persist.sys.builtinrotation", 0);
+ 
+     /**
+      * Last applied orientation of the display.
+-- 
+2.24.0
+

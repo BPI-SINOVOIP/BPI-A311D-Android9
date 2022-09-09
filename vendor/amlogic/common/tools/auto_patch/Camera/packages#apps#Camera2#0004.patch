@@ -1,0 +1,37 @@
+From a6ef0693156cca5bff732ebe3d2d4beefddad9d5 Mon Sep 17 00:00:00 2001
+From: "jie.yuan" <jie.yuan@amlogic.com>
+Date: Wed, 20 May 2020 18:54:20 +0800
+Subject: [PATCH] camera: finish camera app when receive error [1/1]
+
+PD#SWPL-23903
+
+Problem:
+the screen stays on the recording interface when plug out usb camera
+
+Solution:
+try to finish camera app when receive error
+
+Verify:
+locally
+
+Signed-off-by: jie.yuan <jie.yuan@amlogic.com>
+Change-Id: I4d2ca2a83f64d4091fd51bf5d8f9a26738815b56
+---
+ src/com/android/camera/CameraActivity.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/com/android/camera/CameraActivity.java b/src/com/android/camera/CameraActivity.java
+index 51ce6dac2..7f468ba4a 100644
+--- a/src/com/android/camera/CameraActivity.java
++++ b/src/com/android/camera/CameraActivity.java
+@@ -1441,6 +1441,7 @@ public class CameraActivity extends QuickActivity
+                 public void onCameraError(int errorCode) {
+                     // Not a fatal error. only do Log.e().
+                     Log.e(TAG, "Camera error callback. error=" + errorCode);
++                    onFatalError();
+                 }
+                 @Override
+                 public void onCameraException(
+-- 
+2.26.1
+

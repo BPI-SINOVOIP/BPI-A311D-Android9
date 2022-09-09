@@ -1,0 +1,1336 @@
+From 6dc7685881a51bcc9ea9596a66584c0179634ac5 Mon Sep 17 00:00:00 2001
+From: "lijun.meng" <lijun.meng@amlogic.com>
+Date: Tue, 29 Sep 2020 10:32:59 +0800
+Subject: [PATCH] Net: DHCP cannot obaint IP in IPV6 network [2/3]
+
+PD#SH-5482
+
+Problem:
+DHCP cannot obaint IP in IPV6 network
+
+Solution:
+add dhclient start api
+
+Verify:
+
+Change-Id: I715378ba44fe9b531866b5eeb636d54a8043e564
+Signed-off-by: lijun.meng <lijun.meng@amlogic.com>
+---
+ libcutils/fs_config.cpp    |   1 +
+ libnetutils/Android.bp     |   2 +
+ libnetutils/dhcp_utils.c   | 372 ++++++++++++++++++++++++
+ libnetutils/dhcpv6_utils.c | 559 +++++++++++++++++++++++++++++++++++++
+ libnetutils/ifc_utils.c    | 320 +++++++++++++++++++++
+ 5 files changed, 1254 insertions(+)
+ create mode 100644 libnetutils/dhcp_utils.c
+ create mode 100644 libnetutils/dhcpv6_utils.c
+
+diff --git a/libcutils/fs_config.cpp b/libcutils/fs_config.cpp
+index 5b79b1d7d..16e351aaa 100644
+--- a/libcutils/fs_config.cpp
++++ b/libcutils/fs_config.cpp
+@@ -163,6 +163,7 @@ static const struct fs_path_config android_files[] = {
+     { 00550, AID_ROOT,      AID_SHELL,     0, "system/etc/init.goldfish.sh" },
+     { 00550, AID_ROOT,      AID_SHELL,     0, "system/etc/init.ril" },
+     { 00555, AID_ROOT,      AID_ROOT,      0, "system/etc/ppp/*" },
++    { 00755, AID_ROOT,      AID_SHELL,     0, "system/etc/dhcpcd/dhclient-script" },
+     { 00555, AID_ROOT,      AID_ROOT,      0, "system/etc/rc.*" },
+     { 00440, AID_ROOT,      AID_ROOT,      0, "system/etc/recovery.img" },
+     { 00600, AID_ROOT,      AID_ROOT,      0, "vendor/build.prop" },
+diff --git a/libnetutils/Android.bp b/libnetutils/Android.bp
+index 1d43775d6..988b8d267 100644
+--- a/libnetutils/Android.bp
++++ b/libnetutils/Android.bp
+@@ -8,8 +8,10 @@ cc_library_shared {
+     srcs: [
+         "dhcpclient.c",
+         "dhcpmsg.c",
++        "dhcp_utils.c",
+         "ifc_utils.c",
+         "packet.c",
++        "dhcpv6_utils.c",
+     ],
+ 
+     shared_libs: [
+diff --git a/libnetutils/dhcp_utils.c b/libnetutils/dhcp_utils.c
+new file mode 100644
+index 000000000..c6b9fe491
+--- /dev/null
++++ b/libnetutils/dhcp_utils.c
+@@ -0,0 +1,372 @@
++/*
++ * Copyright 2008, The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++/* Utilities for managing the dhcpcd DHCP client daemon */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <arpa/inet.h>
++#include <netinet/in.h>
++
++#include <cutils/properties.h>
++
++static const char DAEMON_NAME[]        = "dhcpcd";
++static const char DAEMON_PROP_NAME[]   = "init.svc.dhcpcd";
++static const char HOSTNAME_PROP_NAME[] = "net.hostname";
++static const char DHCP_PROP_NAME_PREFIX[]  = "dhcp";
++static const char DHCP_CONFIG_PATH[]   = "/system/etc/dhcpcd/dhcpcd.conf";
++static const int NAP_TIME = 200;   /* wait for 200ms at a time */
++                                  /* when polling for property values */
++static const char DAEMON_NAME_RENEW[]  = "iprenew";
++static char errmsg[100] = "\0";
++/* interface length for dhcpcd daemon start (dhcpcd_<interface> as defined in init.rc file)
++ * or for filling up system properties dhcpcd.<interface>.ipaddress, dhcpcd.<interface>.dns1
++ * and other properties on a successful bind
++ */
++#define MAX_INTERFACE_LENGTH 25
++
++/*
++ * P2p interface names increase sequentially p2p-p2p0-1, p2p-p2p0-2.. after
++ * group formation. This does not work well with system properties which can quickly
++ * exhaust or for specifiying a dhcp start target in init which requires
++ * interface to be pre-defined in init.rc file.
++ *
++ * This function returns a common string p2p for all p2p interfaces.
++ */
++void get_p2p_interface_replacement(const char *interface, char *p2p_interface) {
++    /* Use p2p for any interface starting with p2p. */
++    if (strncmp(interface, "p2p",3) == 0) {
++        strncpy(p2p_interface, "p2p", MAX_INTERFACE_LENGTH);
++    } else {
++        strncpy(p2p_interface, interface, MAX_INTERFACE_LENGTH);
++    }
++}
++
++/*
++ * Wait for a system property to be assigned a specified value.
++ * If desired_value is NULL, then just wait for the property to
++ * be created with any value. maxwait is the maximum amount of
++ * time in seconds to wait before giving up.
++ */
++static int wait_for_property(const char *name, const char *desired_value, int maxwait)
++{
++    char value[PROPERTY_VALUE_MAX] = {'\0'};
++    int maxnaps = (maxwait * 1000) / NAP_TIME;
++
++    if (maxnaps < 1) {
++        maxnaps = 1;
++    }
++
++    while (maxnaps-- >= 0) {
++        if (property_get(name, value, NULL)) {
++            if (desired_value == NULL ||
++                    strcmp(value, desired_value) == 0) {
++                return 0;
++            }
++        }
++        if (maxnaps >= 0) {
++            usleep(NAP_TIME * 1000);
++        }
++    }
++    return -1; /* failure */
++}
++
++static int fill_ip_info(const char *interface,
++                     char *ipaddr,
++                     char *gateway,
++                     uint32_t *prefixLength,
++                     char *dns[],
++                     char *server,
++                     uint32_t *lease,
++                     char *vendorInfo,
++                     char *domain,
++                     char *mtu)
++{
++    char prop_name[PROPERTY_KEY_MAX];
++    char prop_value[PROPERTY_VALUE_MAX];
++    /* Interface name after converting p2p0-p2p0-X to p2p to reuse system properties */
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++    int x;
++
++    get_p2p_interface_replacement(interface, p2p_interface);
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.ipaddress", DHCP_PROP_NAME_PREFIX, p2p_interface);
++    property_get(prop_name, ipaddr, NULL);
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.gateway", DHCP_PROP_NAME_PREFIX, p2p_interface);
++    property_get(prop_name, gateway, NULL);
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.server", DHCP_PROP_NAME_PREFIX, p2p_interface);
++    property_get(prop_name, server, NULL);
++
++    //TODO: Handle IPv6 when we change system property usage
++    if (gateway[0] == '\0' || strncmp(gateway, "0.0.0.0", 7) == 0) {
++        //DHCP server is our best bet as gateway
++        strncpy(gateway, server, PROPERTY_VALUE_MAX);
++    }
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.mask", DHCP_PROP_NAME_PREFIX, p2p_interface);
++    if (property_get(prop_name, prop_value, NULL)) {
++        int p;
++        // this conversion is v4 only, but this dhcp client is v4 only anyway
++        in_addr_t mask = ntohl(inet_addr(prop_value));
++        // Check netmask is a valid IP address.  ntohl gives NONE response (all 1's) for
++        // non 255.255.255.255 inputs.  if we get that value check if it is legit..
++        if (mask == INADDR_NONE && strcmp(prop_value, "255.255.255.255") != 0) {
++            snprintf(errmsg, sizeof(errmsg), "DHCP gave invalid net mask %s", prop_value);
++            return -1;
++        }
++        for (p = 0; p < 32; p++) {
++            if (mask == 0) break;
++            // check for non-contiguous netmask, e.g., 255.254.255.0
++            if ((mask & 0x80000000) == 0) {
++                snprintf(errmsg, sizeof(errmsg), "DHCP gave invalid net mask %s", prop_value);
++                return -1;
++            }
++            mask = mask << 1;
++        }
++        *prefixLength = p;
++    }
++
++    for (x=0; dns[x] != NULL; x++) {
++        snprintf(prop_name, sizeof(prop_name), "%s.%s.dns%d", DHCP_PROP_NAME_PREFIX, p2p_interface, x+1);
++        property_get(prop_name, dns[x], NULL);
++    }
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.leasetime", DHCP_PROP_NAME_PREFIX, p2p_interface);
++    if (property_get(prop_name, prop_value, NULL)) {
++        *lease = atol(prop_value);
++    }
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.vendorInfo", DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++    property_get(prop_name, vendorInfo, NULL);
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.domain", DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++    property_get(prop_name, domain, NULL);
++
++    snprintf(prop_name, sizeof(prop_name), "%s.%s.mtu", DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++    property_get(prop_name, mtu, NULL);
++
++    return 0;
++}
++
++/*
++ * Get any available DHCP results.
++ */
++int dhcp_get_results(const char *interface,
++                     char *ipaddr,
++                     char *gateway,
++                     uint32_t *prefixLength,
++                     char *dns[],
++                     char *server,
++                     uint32_t *lease,
++                     char *vendorInfo,
++                     char *domain,
++                     char *mtu)
++{
++    char result_prop_name[PROPERTY_KEY_MAX];
++    char prop_value[PROPERTY_VALUE_MAX];
++
++    /* Interface name after converting p2p0-p2p0-X to p2p to reuse system properties */
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++    get_p2p_interface_replacement(interface, p2p_interface);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
++            DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++
++    memset(prop_value, '\0', PROPERTY_VALUE_MAX);
++    if (!property_get(result_prop_name, prop_value, NULL)) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "DHCP result property was not set");
++        return -1;
++    }
++    if (strcmp(prop_value, "ok") == 0) {
++        if (fill_ip_info(interface, ipaddr, gateway, prefixLength, dns,
++                server, lease, vendorInfo, domain, mtu) == -1) {
++            return -1;
++        }
++        return 0;
++    } else {
++        snprintf(errmsg, sizeof(errmsg), "DHCP result was %s", prop_value);
++        return -1;
++    }
++}
++
++/*
++ * Start the dhcp client daemon, and wait for it to finish
++ * configuring the interface.
++ *
++ * The device init.rc file needs a corresponding entry for this work.
++ *
++ * Example:
++ * service dhcpcd_<interface> /system/bin/dhcpcd -ABKL -f dhcpcd.conf
++ */
++int dhcp_start(const char *interface)
++{
++    char result_prop_name[PROPERTY_KEY_MAX];
++    char daemon_prop_name[PROPERTY_KEY_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    char daemon_cmd[PROPERTY_VALUE_MAX * 2 + sizeof(DHCP_CONFIG_PATH)];
++    const char *ctrl_prop = "ctl.start";
++    const char *desired_status = "running";
++    /* Interface name after converting p2p0-p2p0-X to p2p to reuse system properties */
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++
++    get_p2p_interface_replacement(interface, p2p_interface);
++
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
++            DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++
++    snprintf(daemon_prop_name, sizeof(daemon_prop_name), "%s_%s",
++            DAEMON_PROP_NAME,
++            p2p_interface);
++
++    /* Erase any previous setting of the dhcp result property */
++    property_set(result_prop_name, "");
++
++    /* Start the daemon and wait until it's ready */
++    if (property_get(HOSTNAME_PROP_NAME, prop_value, NULL) && (prop_value[0] != '\0'))
++        snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s:-f %s -h %s %s", DAEMON_NAME,
++                 p2p_interface, DHCP_CONFIG_PATH, prop_value, interface);
++    else
++        snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s:-f %s %s", DAEMON_NAME,
++                 p2p_interface, DHCP_CONFIG_PATH, interface);
++    memset(prop_value, '\0', PROPERTY_VALUE_MAX);
++    property_set(ctrl_prop, daemon_cmd);
++    if (wait_for_property(daemon_prop_name, desired_status, 10) < 0) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "Timed out waiting for dhcpcd to start");
++        return -1;
++    }
++
++    /* Wait for the daemon to return a result */
++    if (wait_for_property(result_prop_name, NULL, 30) < 0) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "Timed out waiting for DHCP to finish");
++        return -1;
++    }
++
++    return 0;
++}
++
++/**
++ * Stop the DHCP client daemon.
++ */
++int dhcp_stop(const char *interface)
++{
++    char result_prop_name[PROPERTY_KEY_MAX];
++    char daemon_prop_name[PROPERTY_KEY_MAX];
++    char daemon_cmd[PROPERTY_VALUE_MAX * 2];
++    const char *ctrl_prop = "ctl.stop";
++    const char *desired_status = "stopped";
++
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++
++    get_p2p_interface_replacement(interface, p2p_interface);
++
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
++            DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++
++    snprintf(daemon_prop_name, sizeof(daemon_prop_name), "%s_%s",
++            DAEMON_PROP_NAME,
++            p2p_interface);
++
++    snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME, p2p_interface);
++
++    /* Stop the daemon and wait until it's reported to be stopped */
++    property_set(ctrl_prop, daemon_cmd);
++    if (wait_for_property(daemon_prop_name, desired_status, 5) < 0) {
++        return -1;
++    }
++    property_set(result_prop_name, "failed");
++    return 0;
++}
++
++/**
++ * Release the current DHCP client lease.
++ */
++int dhcp_release_lease(const char *interface)
++{
++    char daemon_prop_name[PROPERTY_KEY_MAX];
++    char daemon_cmd[PROPERTY_VALUE_MAX * 2];
++    const char *ctrl_prop = "ctl.stop";
++    const char *desired_status = "stopped";
++
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++
++    get_p2p_interface_replacement(interface, p2p_interface);
++
++    snprintf(daemon_prop_name, sizeof(daemon_prop_name), "%s_%s",
++            DAEMON_PROP_NAME,
++            p2p_interface);
++
++    snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME, p2p_interface);
++
++    /* Stop the daemon and wait until it's reported to be stopped */
++    property_set(ctrl_prop, daemon_cmd);
++    if (wait_for_property(daemon_prop_name, desired_status, 5) < 0) {
++        return -1;
++    }
++    return 0;
++}
++
++char *dhcp_get_errmsg() {
++    return errmsg;
++}
++
++/**
++ * The device init.rc file needs a corresponding entry.
++ *
++ * Example:
++ * service iprenew_<interface> /system/bin/dhcpcd -n
++ *
++ */
++int dhcp_start_renew(const char *interface)
++{
++    char result_prop_name[PROPERTY_KEY_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    char daemon_cmd[PROPERTY_VALUE_MAX * 2];
++    const char *ctrl_prop = "ctl.start";
++
++    char p2p_interface[MAX_INTERFACE_LENGTH];
++
++    get_p2p_interface_replacement(interface, p2p_interface);
++
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
++            DHCP_PROP_NAME_PREFIX,
++            p2p_interface);
++
++    /* Erase any previous setting of the dhcp result property */
++    property_set(result_prop_name, "");
++
++    /* Start the renew daemon and wait until it's ready */
++    snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s:%s", DAEMON_NAME_RENEW,
++            p2p_interface, interface);
++    memset(prop_value, '\0', PROPERTY_VALUE_MAX);
++    property_set(ctrl_prop, daemon_cmd);
++
++    /* Wait for the daemon to return a result */
++    if (wait_for_property(result_prop_name, NULL, 30) < 0) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "Timed out waiting for DHCP Renew to finish");
++        return -1;
++    }
++
++    return 0;
++}
+diff --git a/libnetutils/dhcpv6_utils.c b/libnetutils/dhcpv6_utils.c
+new file mode 100644
+index 000000000..89fa5e6ec
+--- /dev/null
++++ b/libnetutils/dhcpv6_utils.c
+@@ -0,0 +1,559 @@
++#include <stdio.h>
++#include <string.h>
++
++#include <sys/types.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <net/if.h>
++#include <netdb.h>
++#include <linux/if.h>
++#include <linux/if_ether.h>
++#include <linux/if_arp.h>
++#include <linux/netlink.h>
++#include <linux/if.h>
++#include <linux/route.h>
++#include <linux/ipv6_route.h>
++#include <cutils/properties.h>
++#define LOG_TAG "dhcpv6_utils"
++#include <cutils/log.h>
++#include <errno.h>
++#include <sys/ioctl.h>
++#include <sys/socket.h>
++#include <sys/time.h>
++#include <sys/uio.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <netinet/icmp6.h>
++#include <arpa/inet.h>
++#include <getopt.h>
++#include <poll.h>
++#include <ctype.h>
++#include <linux/filter.h>
++#include <stddef.h>
++#include <unistd.h>
++
++#define NS_MULTI_ADDR "FF02::1:FF00:0"
++#define IPV6_DHCPV6     0
++#define IPV6_STATELESS  1
++const char ipv6_proc_path[] = "/proc/sys/net/ipv6/conf";
++
++static const char DAEMON_NAME[]                 = "dhclient";
++static const char DAEMON_PROP_NAME[]            = "init.svc.dhclient";
++static const char DAEMON_NAME_RELEASE[]         = "release6";
++static const int NAP_TIME = 200;   /* wait for 200ms at a time */
++static char errmsg[100];
++
++/*
++ * Wait for a system property to be assigned a specified value.
++ * If desired_value is NULL, then just wait for the property to
++ * be created with any value. maxwait is the maximum amount of
++ * time in seconds to wait before giving up.
++ */
++static int wait_for_property(const char *name, const char *desired_value, int maxwait)
++{
++    char value[PROPERTY_VALUE_MAX] = {'\0'};
++    int maxnaps = (maxwait * 1000) / NAP_TIME;
++
++    if (maxnaps < 1) {
++        maxnaps = 1;
++    }
++
++    while (maxnaps-- > 0) {
++        usleep(NAP_TIME * 1000);
++        if (property_get(name, value, NULL)) {
++            if (desired_value == NULL ||
++                    strcmp(value, desired_value) == 0) {
++                return 0;
++            }
++        }
++    }
++    return -1; /* failure */
++}
++
++static int wait_for_property_with_emergency(const char *name, const char *desired_value, int maxwait,
++        const char* daemon, const char* daemon_emerg)
++{
++    char value[PROPERTY_VALUE_MAX] = {'\0'};
++    char value2[PROPERTY_VALUE_MAX] = {'\0'};
++    int maxnaps = (maxwait * 1000) / NAP_TIME;
++
++    if (maxnaps < 1) {
++        maxnaps = 1;
++    }
++
++    while (maxnaps-- > 0) {
++        usleep(NAP_TIME * 1000);
++        if (property_get(name, value, NULL)) {
++            if (desired_value == NULL ||
++                    strcmp(value, desired_value) == 0) {
++                return 0;
++            }
++        }else if(property_get(daemon, value2, NULL)){
++            if (daemon_emerg != NULL &&
++                    strcmp(value2, daemon_emerg) == 0) {
++                return -2;//we think that daemon is stopped
++            }  
++            
++        }
++    }
++    return -1; /* failure */
++}
++
++/**
++ * Start the DHCPv6 client daemon.
++ */
++ /*
++ *@type: IPV6_DHCPV6 means dhcpv6; IPV6_STATELESS means stateless
++ */
++int dhcpv6_do_request(const char *interface, int type)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++    char daemon_prop[PROPERTY_VALUE_MAX] = {'\0'};
++    char daemon_cmd[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    const char *ctrl_prop = "ctl.start";
++    const char *desired_status = "running";
++    char ipaddress6[256] = {'\0'};
++    int ret = -1;
++
++    memset(daemon_cmd, '\0', PROPERTY_VALUE_MAX);
++    if(type == IPV6_DHCPV6){
++        snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME, interface);
++    }else if (type == IPV6_STATELESS){
++        snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s:-S", DAEMON_NAME, interface);
++    }else{
++        ALOGE("wrong type of request");
++        return -1;
++    }
++
++    ALOGD("dhcpv6_do_request: %s %s", ctrl_prop, daemon_cmd);
++    property_set(ctrl_prop, daemon_cmd);
++
++    memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s_%s", DAEMON_PROP_NAME, interface);
++    snprintf(daemon_prop, sizeof(daemon_prop), "%s", result_prop_name);
++
++    if (wait_for_property(result_prop_name, desired_status, 10) < 0) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "Timed out waiting for DHCPv6 to start");
++	ALOGE("Timed out waiting for DHCPv6 to start");
++        return -1;
++    }
++
++    memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result", DAEMON_NAME, interface);
++    /* Wait for the daemon to return a result */
++    ret = wait_for_property_with_emergency(result_prop_name, NULL, 30, daemon_prop, "stopped");
++    if (ret < 0) {
++        if(ret == -2){
++            snprintf(errmsg, sizeof(errmsg), "%s", "dhcpv6 is killed while running");
++            ALOGE("dhcpv6 is killed while running");
++        }else{
++            snprintf(errmsg, sizeof(errmsg), "%s", "Timed out waiting for DHCPv6 to finished");
++            ALOGE("Timed out waiting for DHCPv6 to finished");
++        }
++        return -1;
++    }
++
++    if (!property_get(result_prop_name, prop_value, NULL)) {
++        /* shouldn't ever happen, given the success of wait_for_property() */
++        snprintf(errmsg, sizeof(errmsg), "%s", "DHCPv6 result property was not set");
++	ALOGE("DHCPv6 result property was not set");
++        return -1;
++    }
++    if (strcmp(prop_value, "ok") == 0) {
++        snprintf(errmsg, sizeof(errmsg), "%s", "DHCPv6 Success");
++    } else {
++        snprintf(errmsg, sizeof(errmsg), "%s", "DHCPv6 Fail");
++	ALOGE("DHCPv6 Fail");
++        return -1;
++    }
++    ALOGD("dhcpv6_do_request errmsg %s", errmsg);
++    return 0;
++}
++
++/**
++ * Stop the DHCPv6 client daemon.
++ */
++ /*
++ * @type, in fact, it is of no use.
++ */
++int dhcpv6_stop(const char *interface, int type)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++    char daemon_cmd[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    const char *ctrl_prop = "ctl.stop";
++    const char *desired_status = "stopped";
++
++    memset(daemon_cmd, '\0', PROPERTY_VALUE_MAX);
++    snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME, interface);
++    property_set(ctrl_prop, daemon_cmd);
++    ALOGD("dhcpv6_stop %s, type = %d", daemon_cmd, type);
++    /* Stop the daemon and wait until it's reported to be stopped */
++    memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s_%s", DAEMON_PROP_NAME, interface);
++    ALOGD("stop dhclient");
++    if (wait_for_property(result_prop_name, desired_status, 10) < 0) {
++        ALOGE("here is return,error");
++        return -1;
++    }
++    snprintf(prop_value, sizeof(prop_value), "%s.ipaddress.%s", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    snprintf(prop_value, sizeof(prop_value), "%s.prefixlen.%s", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    snprintf(prop_value, sizeof(prop_value), "%s.%s.result", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    return 0;
++}
++
++/**
++ * Rlease the DHCPv6 ip address.
++ */
++ /*
++ *@type: for IPV6_STATELESS, do nothing. Because ipv6 server do not manage stateless ip. 
++ */
++int dhcpv6_release_lease(const char *interface, int type)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++    char daemon_cmd[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    const char *ctrl_prop = "ctl.start";
++    const char *desired_status = "stopped";
++    if(type == IPV6_STATELESS)
++        return 0;
++    memset(daemon_cmd, '\0', PROPERTY_VALUE_MAX);
++    snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME_RELEASE,interface);
++    property_set(ctrl_prop, daemon_cmd);
++
++    /* Stop the daemon and wait until it's reported to be stopped */
++    memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s_%s", DAEMON_PROP_NAME, interface);
++    if (wait_for_property(result_prop_name, desired_status, 10) < 0) {
++        return -1;
++    }
++
++    snprintf(prop_value, sizeof(prop_value), "%s.ipaddress.%s", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    snprintf(prop_value, sizeof(prop_value), "%s.prefixlen.%s", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    snprintf(prop_value, sizeof(prop_value), "%s.%s.result", DAEMON_NAME, interface);
++    property_set(prop_value, "");
++    return 0;
++}
++
++int dhcpv6_check_status(const char *interface)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++
++    memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result", DAEMON_NAME, interface);
++
++    if (!property_get(result_prop_name, prop_value, NULL)) {
++        /* shouldn't ever happen, given the success of wait_for_property() */
++        return -1;
++    }
++    if (strcmp(prop_value, "ok") == 0) {
++        return 0;
++    } else {
++        return -1;
++    }
++}
++
++const char *dhcpv6_get_ipaddress(const char *interface, char *ipv6address)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++
++    if(!dhcpv6_check_status(interface)) {
++        memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++        snprintf(result_prop_name, sizeof(result_prop_name), "%s.ipaddress.%s", DAEMON_NAME, interface);
++        if(!property_get(result_prop_name, ipv6address, NULL)) {
++            return NULL;
++        } else {
++            return ipv6address;
++        }
++    } else {
++        return NULL;
++    }
++}
++
++const char *dhcpv6_get_gateway(char *ipv6_gateway)
++{
++    char addr6x[80];
++    char iface[16];
++    int iflags, metric, refcnt, use, prefix_len, slen;
++    FILE *fp = fopen("/proc/net/ipv6_route", "r");
++
++    while (1) {
++        int r;
++        r = fscanf(fp, "%32s%x%*s%x%32s%x%x%x%x%s\n",
++                addr6x+14, &prefix_len, &slen, addr6x+40+7,
++                &metric, &use, &refcnt, &iflags, iface);
++        if(iflags & RTF_GATEWAY) {
++            int i = 0;
++            char *p = addr6x+14;
++
++            do {
++                if (!*p) {
++                    if (i == 40) {
++                        addr6x[39] = 0;
++                        ++p;
++                        continue;
++                    }
++                    return NULL;
++                }
++                addr6x[i++] = *p++;
++                if (!((i+1) % 5)) {
++                    addr6x[i++] = ':';
++                }
++            } while (i < 40+28+7);
++            strcpy(ipv6_gateway, addr6x+40);
++            *(ipv6_gateway + strlen(addr6x+40) + 1) = 0x00;
++        }
++        if (r != 9) {
++            if ((r < 0) && feof(fp)) { /* EOF with no (nonspace) chars read. */
++                break;
++            }
++        }
++    }
++    fclose(fp);
++    if(strlen(ipv6_gateway) != 0) {
++        return ipv6_gateway;
++    } else {
++        return NULL;
++    }
++}
++
++const char *dhcpv6_get_prefixlen(const char *interface, char *prefixlen)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++
++    if(!dhcpv6_check_status(interface)) {
++        memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++        snprintf(result_prop_name, sizeof(result_prop_name), "%s.prefixlen.%s", DAEMON_NAME, interface);
++        if(!property_get(result_prop_name, prefixlen, NULL)) {
++            return NULL;
++        } else {
++            return prefixlen;
++        }
++    } else {
++        return NULL;
++    }
++}
++
++const char *dhcpv6_get_dns(const char *interface, char *dns, int dns_cnt)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++
++    if(!dhcpv6_check_status(interface)) {
++        memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++        snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.dns%d", DAEMON_NAME, interface, dns_cnt);
++        if(!property_get(result_prop_name, dns, NULL)) {
++            return NULL;
++        } else {
++            return dns;
++        }
++    } else {
++        return NULL;
++    }
++}
++
++#define DHCPV6_DNS_CNT_MAX 6
++int dhcpv6_get_dns_cnt(const char *interface)
++{
++    char result_prop_name[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    int i = 1;
++
++    if(!dhcpv6_check_status(interface)) {
++        for(i = 1; i < DHCPV6_DNS_CNT_MAX; i++) {
++            memset(result_prop_name, '\0', PROPERTY_VALUE_MAX);
++            snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.dns%d", DAEMON_NAME, interface, i);
++            if(!property_get(result_prop_name, prop_value, NULL)) {
++                ALOGD("dhcpv6_get_dns_cnt dns %d = NULL", i);
++                break;
++            }
++        }
++    }
++    return i - 1;
++}
++
++char *dhcpv6_get_errmsg() {
++    return errmsg;
++}
++
++static int icmpv6_probe(char *pIfname, struct in6_addr *dst)
++{
++    int sockfd      = -1;
++    int sockopt		= 0;
++    char buff[512] = {0};
++    struct sockaddr_in6 multi_addr;
++    struct ipv6_mreq mreq6;
++	fd_set fdset;
++    struct nd_neighbor_solicit *ns_pkt;	
++	int ret_value = 0;
++    if((NULL == pIfname) || (NULL == dst))
++    {
++        return ret_value;
++    }
++	//Debug test the dst 
++	char ipDst[512] = {0};
++	inet_ntop(AF_INET6,(void*)dst,ipDst,128);
++	ALOGD("Debug: the pIfname is %s\nDebug: the dst addr is %s\n",pIfname,ipDst);
++	
++	//create socket and set the opt
++    sockfd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
++    if(sockfd <= 0)
++    {
++        ALOGD("NS icmpv6 socket create error: %s \r\n",strerror(errno));
++        return ret_value;
++    }
++	
++    sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
++    if(2 != sockopt)
++    {
++        ALOGD("icmp_cksum offset error: %s\r\n",strerror(errno));
++        close(sockfd);
++        return ret_value;
++    }
++
++    if(setsockopt(sockfd, SOL_RAW, IPV6_CHECKSUM, &sockopt, sizeof(sockopt)) < 0)
++    {
++        ALOGD("icmp_cksum set error: %s\r\n",strerror(errno));
++        close(sockfd);
++        return ret_value;
++    }
++	
++    /*ns packet*/
++    ns_pkt = (struct nd_neighbor_solicit*)buff;
++    ns_pkt->nd_ns_type      = ND_NEIGHBOR_SOLICIT;
++    ns_pkt->nd_ns_code      = 0;
++    ns_pkt->nd_ns_reserved  = 0;
++    memcpy(&ns_pkt->nd_ns_target, dst, sizeof(struct in6_addr));
++    multi_addr.sin6_family = AF_INET6;
++
++   if(inet_pton(AF_INET6, NS_MULTI_ADDR, &multi_addr.sin6_addr) < 0)  
++   {  
++		ALOGD("inet_pton error");  
++		return ret_value; 
++	}  
++
++    multi_addr.sin6_addr.s6_addr[13] = dst->s6_addr[13];
++    multi_addr.sin6_addr.s6_addr[14] = dst->s6_addr[14];  
++    multi_addr.sin6_addr.s6_addr[15] = dst->s6_addr[15];
++
++	//debug test the multiaddr 
++	char ipNSMulti[512] = {0};
++	inet_ntop(AF_INET6,(void*)&multi_addr.sin6_addr,ipNSMulti,512);
++	ALOGD("Debug: the multi_addr is %s\n",ipNSMulti);
++	
++    //join group
++    memcpy(&mreq6.ipv6mr_multiaddr, &multi_addr.sin6_addr,sizeof(struct in6_addr));
++    mreq6.ipv6mr_interface = if_nametoindex(pIfname);
++	ALOGD("Debug: the interface index is %d\n",mreq6.ipv6mr_interface);
++    if(0 > setsockopt(sockfd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq6, sizeof(mreq6)))
++	{
++		ALOGD("IPV6_JOIN_GROUP : %s\n",strerror(errno));
++		close(sockfd);
++		return ret_value;
++	}
++	else
++	{
++		ALOGD("Debug: join the grout success !\n");	
++	}
++    //set multicast hops to 255
++    sockopt = 255;
++    setsockopt(sockfd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &sockopt, sizeof(int));
++	ALOGD("Debug: multicast's icmpv6 type is  %d\n",((struct nd_neighbor_solicit*)buff)->nd_ns_type);	
++   	/* wait neighbor advert reply, and check it */
++	struct nd_neighbor_advert na_pkt ;	
++	int nsProbeTimes = 3;
++	struct timeval tm_probe = {1,0};	
++    time_t	 prevTime;	
++	
++	while(nsProbeTimes > 0)
++	{
++		//send data
++		if(0 > sendto(sockfd, buff, sizeof(struct nd_neighbor_solicit), 0, 
++		         (struct sockaddr*)&multi_addr, sizeof(multi_addr)))
++		{
++			ALOGD("sendto: %s\n", strerror(errno));
++			nsProbeTimes = -1;
++			ret_value =  -1;		
++		}
++		else
++		{
++			ALOGD("Debug: sendto ns multicast success\n");
++		}
++	
++		time(&prevTime);
++		while (1) {
++			FD_ZERO(&fdset);
++			FD_SET(sockfd, &fdset);
++			if (select(sockfd + 1, &fdset, (fd_set *) NULL, (fd_set *) NULL, &tm_probe) < 0) {
++				if (errno != EINTR) 
++				{
++					ALOGD("select error: %s\r\n",strerror(errno));
++					close(sockfd);
++					nsProbeTimes = -1;
++					ret_value =  -1;
++					break;
++				}
++			}
++			else if (FD_ISSET(sockfd, &fdset)) {
++				if (recv(sockfd, &na_pkt, sizeof(na_pkt), 0) < 0 ) 
++				{
++					ALOGD("recv error: %s\r\n",strerror(errno));					
++					nsProbeTimes = -1;
++					ret_value =  -1;
++					break;
++				}
++			
++				if(na_pkt.nd_na_type == ND_NEIGHBOR_ADVERT){
++					//Debug test the dst 
++					char naIpTarget[128] = {0};
++					inet_ntop(AF_INET6,(void*)&na_pkt.nd_na_target,naIpTarget,128);
++					ALOGD("Debug: the dst addr is %s\n",naIpTarget);
++					if( 0 == memcmp((void*)dst,(void*)&na_pkt.nd_na_target,sizeof(struct in6_addr)))
++					{
++						ALOGD("Debug: Ipv6 conflict!\n");
++						nsProbeTimes = -1;
++						ret_value =  1;
++						break;
++					}
++				}
++			}
++			if((time(NULL) - prevTime) > 1)	
++			{
++				ALOGD("Debug: have not receive NA in 1s\n");
++				--nsProbeTimes;
++				break;
++			}
++		}
++	}
++    //leave the group
++    setsockopt(sockfd, IPPROTO_IPV6, IPV6_LEAVE_GROUP, &mreq6, sizeof(mreq6));   
++    close(sockfd);
++	if(ret_value == 0)
++	{
++		ALOGD("Debug: Ipv6 address is legal!!");
++	}
++    return ret_value;
++}
++
++int ipv6_addr_arp(const char* iface, const char* addr)
++{
++    struct in6_addr  m_ip;
++	char ifname[32];
++	if(iface == NULL || addr == NULL)
++		return -1;
++	inet_pton(AF_INET6, addr, &m_ip);
++	strcpy(ifname, iface);
++	return icmpv6_probe(ifname, &m_ip);
++}
++
++int setEnable_ipv6_stateless(const char* iface, int conf)
++{
++    ALOGD("setEnable_ipv6_stateless: iface = %s, conf = %d", iface, conf);
++    return 0;
++} 
+diff --git a/libnetutils/ifc_utils.c b/libnetutils/ifc_utils.c
+index a098d596e..9f758b9bc 100644
+--- a/libnetutils/ifc_utils.c
++++ b/libnetutils/ifc_utils.c
+@@ -663,6 +663,121 @@ int ifc_reset_connections(const char *ifname, const int reset_mask)
+ #endif
+ }
+ 
++
++ /*
++ * Remove the routes associated with the named interface.
++ */
++int ifc_remove_host_routes(const char *name)
++{
++    char ifname[64];
++    in_addr_t dest, gway, mask;
++    int flags, refcnt, use, metric, mtu, win, irtt;
++    struct rtentry rt;
++    FILE *fp;
++    struct in_addr addr;
++
++    fp = fopen("/proc/net/route", "r");
++    if (fp == NULL)
++        return -1;
++    /* Skip the header line */
++    if (fscanf(fp, "%*[^\n]\n") < 0) {
++        fclose(fp);
++        return -1;
++    }
++    ifc_init();
++    for (;;) {
++        int nread = fscanf(fp, "%63s%X%X%X%d%d%d%X%d%d%d\n",
++                           ifname, &dest, &gway, &flags, &refcnt, &use, &metric, &mask,
++                           &mtu, &win, &irtt);
++        if (nread != 11) {
++            break;
++        }
++        if ((flags & (RTF_UP|RTF_HOST)) != (RTF_UP|RTF_HOST)
++                || strcmp(ifname, name) != 0) {
++            continue;
++        }
++        memset(&rt, 0, sizeof(rt));
++        rt.rt_dev = (void *)name;
++        init_sockaddr_in(&rt.rt_dst, dest);
++        init_sockaddr_in(&rt.rt_gateway, gway);
++        init_sockaddr_in(&rt.rt_genmask, mask);
++        addr.s_addr = dest;
++        if (ioctl(ifc_ctl_sock, SIOCDELRT, &rt) < 0) {
++            ALOGD("failed to remove route for %s to %s: %s",
++                 ifname, inet_ntoa(addr), strerror(errno));
++        }
++    }
++    fclose(fp);
++    ifc_close();
++    return 0;
++}
++
++/*
++ * Return the address of the default gateway
++ *
++ * TODO: factor out common code from this and remove_host_routes()
++ * so that we only scan /proc/net/route in one place.
++ *
++ * DEPRECATED
++ */
++int ifc_get_default_route(const char *ifname)
++{
++    char name[64];
++    in_addr_t dest, gway, mask;
++    int flags, refcnt, use, metric, mtu, win, irtt;
++    int result;
++    FILE *fp;
++
++    fp = fopen("/proc/net/route", "r");
++    if (fp == NULL)
++        return 0;
++    /* Skip the header line */
++    if (fscanf(fp, "%*[^\n]\n") < 0) {
++        fclose(fp);
++        return 0;
++    }
++    ifc_init();
++    result = 0;
++    for (;;) {
++        int nread = fscanf(fp, "%63s%X%X%X%d%d%d%X%d%d%d\n",
++                           name, &dest, &gway, &flags, &refcnt, &use, &metric, &mask,
++                           &mtu, &win, &irtt);
++        if (nread != 11) {
++            break;
++        }
++        if ((flags & (RTF_UP|RTF_GATEWAY)) == (RTF_UP|RTF_GATEWAY)
++                && dest == 0
++                && strcmp(ifname, name) == 0) {
++            result = gway;
++            break;
++        }
++    }
++    fclose(fp);
++    ifc_close();
++    return result;
++}
++
++/*
++ * Sets the specified gateway as the default route for the named interface.
++ * DEPRECATED
++ */
++int ifc_set_default_route(const char *ifname, in_addr_t gateway)
++{
++    struct in_addr addr;
++    int result;
++
++    ifc_init();
++    addr.s_addr = gateway;
++    if ((result = ifc_create_default_route(ifname, gateway)) < 0) {
++        ALOGD("failed to add %s as default route for %s: %s",
++             inet_ntoa(addr), ifname, strerror(errno));
++    }
++    ifc_close();
++    return result;
++}
++
++
++
+ /*
+  * Removes the default route for the named interface.
+  */
+@@ -725,3 +840,208 @@ ifc_configure(const char *ifname,
+ 
+     return 0;
+ }
++
++int ifc_act_on_ipv6_route(int action, const char *ifname, struct in6_addr dst, int prefix_length,
++      struct in6_addr gw)
++{
++    struct in6_rtmsg rtmsg;
++    int result;
++    int ifindex;
++
++    memset(&rtmsg, 0, sizeof(rtmsg));
++
++    ifindex = if_nametoindex(ifname);
++    if (ifindex == 0) {
++        printerr("if_nametoindex() failed: interface %s\n", ifname);
++        return -ENXIO;
++    }
++
++    rtmsg.rtmsg_ifindex = ifindex;
++    rtmsg.rtmsg_dst = dst;
++    rtmsg.rtmsg_dst_len = prefix_length;
++    rtmsg.rtmsg_flags = RTF_UP;
++
++    if (prefix_length == 128) {
++        rtmsg.rtmsg_flags |= RTF_HOST;
++    }
++
++    if (memcmp(&gw, &in6addr_any, sizeof(in6addr_any))) {
++        rtmsg.rtmsg_flags |= RTF_GATEWAY;
++        rtmsg.rtmsg_gateway = gw;
++    }
++
++    ifc_init6();
++
++    if (ifc_ctl_sock6 < 0) {
++        return -errno;
++    }
++
++    result = ioctl(ifc_ctl_sock6, action, &rtmsg);
++    if (result < 0) {
++        if (errno == EEXIST) {
++            result = 0;
++        } else {
++            result = -errno;
++        }
++    }
++    ifc_close6();
++    return result;
++}
++
++int ifc_act_on_route(int action, const char *ifname, const char *dst, int prefix_length,
++        const char *gw)
++{
++    int ret = 0;
++    struct sockaddr_in ipv4_dst, ipv4_gw;
++    struct sockaddr_in6 ipv6_dst, ipv6_gw;
++    struct addrinfo hints, *addr_ai, *gw_ai;
++
++    memset(&hints, 0, sizeof(hints));
++    hints.ai_family = AF_UNSPEC;  /* Allow IPv4 or IPv6 */
++    hints.ai_flags = AI_NUMERICHOST;
++
++    ret = getaddrinfo(dst, NULL, &hints, &addr_ai);
++
++    if (ret != 0) {
++        printerr("getaddrinfo failed: invalid address %s\n", dst);
++        return -EINVAL;
++    }
++
++    if (gw == NULL || (strlen(gw) == 0)) {
++        if (addr_ai->ai_family == AF_INET6) {
++            gw = "::";
++        } else if (addr_ai->ai_family == AF_INET) {
++            gw = "0.0.0.0";
++        }
++    }
++
++    if (((addr_ai->ai_family == AF_INET6) && (prefix_length < 0 || prefix_length > 128)) ||
++            ((addr_ai->ai_family == AF_INET) && (prefix_length < 0 || prefix_length > 32))) {
++        printerr("ifc_add_route: invalid prefix length");
++        freeaddrinfo(addr_ai);
++        return -EINVAL;
++    }
++
++    ret = getaddrinfo(gw, NULL, &hints, &gw_ai);
++    if (ret != 0) {
++        printerr("getaddrinfo failed: invalid gateway %s\n", gw);
++        freeaddrinfo(addr_ai);
++        return -EINVAL;
++    }
++
++    if (addr_ai->ai_family != gw_ai->ai_family) {
++        printerr("ifc_add_route: different address families: %s and %s\n", dst, gw);
++        freeaddrinfo(addr_ai);
++        freeaddrinfo(gw_ai);
++        return -EINVAL;
++    }
++
++    if (addr_ai->ai_family == AF_INET6) {
++        memcpy(&ipv6_dst, addr_ai->ai_addr, sizeof(struct sockaddr_in6));
++        memcpy(&ipv6_gw, gw_ai->ai_addr, sizeof(struct sockaddr_in6));
++        ret = ifc_act_on_ipv6_route(action, ifname, ipv6_dst.sin6_addr,
++                prefix_length, ipv6_gw.sin6_addr);
++    } else if (addr_ai->ai_family == AF_INET) {
++        memcpy(&ipv4_dst, addr_ai->ai_addr, sizeof(struct sockaddr_in));
++        memcpy(&ipv4_gw, gw_ai->ai_addr, sizeof(struct sockaddr_in));
++        ret = ifc_act_on_ipv4_route(action, ifname, ipv4_dst.sin_addr,
++                prefix_length, ipv4_gw.sin_addr);
++    } else {
++        printerr("ifc_add_route: getaddrinfo returned un supported address family %d\n",
++                  addr_ai->ai_family);
++        ret = -EAFNOSUPPORT;
++    }
++
++    freeaddrinfo(addr_ai);
++    freeaddrinfo(gw_ai);
++    return ret;
++}
++
++/*
++ * DEPRECATED
++ */
++int ifc_add_ipv4_route(const char *ifname, struct in_addr dst, int prefix_length,
++      struct in_addr gw)
++{
++    int i =ifc_act_on_ipv4_route(SIOCADDRT, ifname, dst, prefix_length, gw);
++    if (DBG) printerr("ifc_add_ipv4_route(%s, xx, %d, xx) = %d", ifname, prefix_length, i);
++    return i;
++}
++
++/*
++ * DEPRECATED
++ */
++int ifc_add_ipv6_route(const char *ifname, struct in6_addr dst, int prefix_length,
++      struct in6_addr gw)
++{
++    return ifc_act_on_ipv6_route(SIOCADDRT, ifname, dst, prefix_length, gw);
++}
++
++int ifc_add_route(const char *ifname, const char *dst, int prefix_length, const char *gw)
++{
++    int i = ifc_act_on_route(SIOCADDRT, ifname, dst, prefix_length, gw);
++    if (DBG) printerr("ifc_add_route(%s, %s, %d, %s) = %d", ifname, dst, prefix_length, gw, i);
++    return i;
++}
++
++void ifc_clear_ipv6_static_dns(const char *name) {
++    char daemon_cmd[PROPERTY_VALUE_MAX];
++    char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
++    int i = 0;
++    for(i = 1; i < 3; i++) {
++        snprintf(daemon_cmd, sizeof(daemon_cmd), "net6.%s.dns%d", name, i);
++        memset(prop_value, '\0', PROPERTY_VALUE_MAX);
++        property_get(daemon_cmd, prop_value, "");
++        if(strlen(prop_value) != 0) {
++            property_set(daemon_cmd, "");
++        } else {
++            ALOGD("no %s", daemon_cmd);
++        }
++    }
++}
++
++int ifc_create_default_route6(const char *name, const char *gw);
++int
++ifc_configure6(const char *ifname,
++        const char *address,
++        uint32_t prefixLength,
++        const char *gateway,
++        const char *dns1,
++        const char *dns2) {
++
++    char dns_prop_name[PROPERTY_KEY_MAX];
++
++    if (ifc_add_address(ifname, address, prefixLength)) {
++        printerr("failed to set ipv6 ipaddr %s/%d: %s\n", address, prefixLength, strerror(errno));
++        return -1;
++    }
++
++    if (ifc_create_default_route6(ifname, gateway)) {
++        printerr("failed to set ipv6 default route %s: %s\n", gateway, strerror(errno));
++        return -1;
++    }
++
++    snprintf(dns_prop_name, sizeof(dns_prop_name), "net6.%s.dns1", ifname);
++    property_set(dns_prop_name, dns1 ? dns1 : "");
++    snprintf(dns_prop_name, sizeof(dns_prop_name), "net6.%s.dns2", ifname);
++    property_set(dns_prop_name, dns2 ? dns2 : "");
++
++    return 0;
++}
++
++int ifc_create_default_route6(const char *name, const char *gw)
++{
++    char *dst = "::";
++
++    int ret = ifc_add_route(name, dst, 0, gw);
++    if (DBG) printerr("failed to set ipv6 default route %s: %s\n", gw, strerror(errno));
++
++    return ret;
++}
++
++
++int ifc_remove_route(const char *ifname, const char*dst, int prefix_length, const char *gw)
++{
++    if (DBG) printerr("ifc_remove_route(%s, %s, %d, %s)", ifname, dst, prefix_length, gw);
++    return ifc_act_on_route(SIOCDELRT, ifname, dst, prefix_length, gw);
++}
+\ No newline at end of file
+-- 
+2.28.0
+

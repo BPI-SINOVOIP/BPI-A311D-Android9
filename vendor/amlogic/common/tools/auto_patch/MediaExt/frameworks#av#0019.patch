@@ -1,0 +1,253 @@
+From 266a03a1213d09125c922870e7914f5577d746ad Mon Sep 17 00:00:00 2001
+From: Jian Wang <jian.wang@amlogic.com>
+Date: Tue, 11 Feb 2020 19:11:55 +0800
+Subject: [PATCH] av1: add dv with av1 support for mp4
+
+PD#SWPL-20356
+
+Problem:
+android p do not support dv with av1
+
+Solution:
+add dv with av1 support for mp4
+
+Verify:
+U212
+
+Change-Id: I15c06dcb4fe6bb4c636d935a7976e2d1bc045594
+Signed-off-by: Jian Wang <jian.wang@amlogic.com>
+---
+ media/extractors/mp4/MPEG4Extractor.cpp       | 78 +++++++++++++++++--
+ media/libstagefright/Utils.cpp                | 42 +++++++++-
+ .../media/stagefright/MediaCodecConstants.h   |  1 +
+ 3 files changed, 111 insertions(+), 10 deletions(-)
+
+diff --git a/media/extractors/mp4/MPEG4Extractor.cpp b/media/extractors/mp4/MPEG4Extractor.cpp
+index 673f5a2660..36cbe06573 100644
+--- a/media/extractors/mp4/MPEG4Extractor.cpp
++++ b/media/extractors/mp4/MPEG4Extractor.cpp
+@@ -355,6 +355,7 @@ static const char *FourCC2MIME(uint32_t fourcc) {
+         case FOURCC('d', 'v', 'a', '1'):
+         case FOURCC('d', 'v', 'h', 'e'):
+         case FOURCC('d', 'v', 'h', '1'):
++        case FOURCC('d', 'a', 'v', '1'):
+             return MEDIA_MIMETYPE_VIDEO_DOLBY_VISION;
+ #endif
+         case FOURCC('a', 'v', '0', '1'):
+@@ -1018,6 +1019,66 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+ 
+                     return OK;
+                 }
++#ifdef DLB_VISION
++                const char *mime;
++                CHECK(mLastTrack->meta.findCString(kKeyMIMEType, &mime));
++
++                if (!strcasecmp(mime, MEDIA_MIMETYPE_VIDEO_DOLBY_VISION)) {
++                    const void *data;
++                    size_t size;
++                    uint32_t type;
++
++                    if (mLastTrack->meta.findData(kKeyDVCC, &type, &data, &size)) {
++                        const uint8_t *ptr = (const uint8_t *)data;
++                        const uint8_t profile = ptr[2] >> 1;
++                        const uint8_t bl_compatibility_id = (ptr[4]) >> 4;
++                        bool create_two_tracks = false;
++
++                        if (bl_compatibility_id && bl_compatibility_id != 15) {
++                            create_two_tracks = true;
++                        }
++
++                        if (4 == profile || 7 == profile ||
++                                (profile >= 8 && profile < 11 && create_two_tracks)) {
++                            // we need a backward compatible track
++                            ALOGV("Adding new backward compatible track");
++                            Track *track_b = new Track;
++
++                            track_b->timescale = mLastTrack->timescale;
++                            track_b->sampleTable = mLastTrack->sampleTable;
++                            track_b->includes_expensive_metadata = mLastTrack->includes_expensive_metadata;
++                            track_b->skipTrack = mLastTrack->skipTrack;
++                            //track_b->elst_needs_processing = mLastTrack->elst_needs_processing;
++                            track_b->elst_media_time = mLastTrack->elst_media_time;
++                            track_b->elst_segment_duration = mLastTrack->elst_segment_duration;
++                            //track_b->elst_shift_start_ticks = mLastTrack->elst_shift_start_ticks;
++                            //track_b->elst_initial_empty_edit_ticks = mLastTrack->elst_initial_empty_edit_ticks;
++                            track_b->subsample_encryption = mLastTrack->subsample_encryption;
++
++                            //track_b->mTx3gBuffer = mLastTrack->mTx3gBuffer;
++                            //track_b->mTx3gSize = mLastTrack->mTx3gSize;
++                            //track_b->mTx3gFilled = mLastTrack->mTx3gFilled;
++
++                            track_b->meta = mLastTrack->meta;
++
++                            mLastTrack->next = track_b;
++                            track_b->next = NULL;
++
++                            track_b->meta.remove(kKeyDVCC);
++
++                            if (4 == profile || 7 == profile || 8 == profile ) {
++                                track_b->meta.setCString(kKeyMIMEType,MEDIA_MIMETYPE_VIDEO_HEVC);
++                            } else if (9 == profile) {
++                                track_b->meta.setCString(kKeyMIMEType,MEDIA_MIMETYPE_VIDEO_AVC);
++                            } else if (10 == profile) {
++                                track_b->meta.setCString(kKeyMIMEType,MEDIA_MIMETYPE_VIDEO_AV1);
++                            } // Should never get to else part
++
++                            mLastTrack = track_b;
++                        }
++                    }
++                }
++#endif
+             } else if (chunk_type == FOURCC('m', 'o', 'o', 'v')) {
+                 mInitCheck = OK;
+ 
+@@ -1615,6 +1676,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+         case FOURCC('d', 'v', 'a', '1'):
+         case FOURCC('d', 'v', 'h', 'e'):
+         case FOURCC('d', 'v', 'h', '1'):
++        case FOURCC('d', 'a', 'v', '1'):
+ #endif
+         case FOURCC('a', 'v', '0', '1'):
+ 
+@@ -3790,7 +3852,8 @@ MediaTrack *MPEG4Extractor::getTrack(size_t index) {
+ 
+         const uint8_t *ptr = (const uint8_t *)data;
+ 
+-        if (size != 24 || ptr[0] != 1 || ptr[1] != 0) {  // dv_version_major == 1, dv_version_minor == 0;
++// dv_major.dv_minor Should be 1.0 or 2.1
++	if (size != 24 || ((ptr[0] != 1 || ptr[1] != 0) && (ptr[0] != 2 || ptr[1] != 1))) {
+             return NULL;
+         }
+     }
+@@ -4312,11 +4375,12 @@ MPEG4Source::MPEG4Source(
+         const uint8_t *ptr = (const uint8_t *)data;
+ 
+         CHECK(size == 24);
+-        CHECK_EQ((unsigned)ptr[0], 1u);  // dv_major_version == 1
+-        CHECK_EQ((unsigned)ptr[1], 0u);  // dv_minor_version == 0
++        // dv_major.dv_minor Should be 1.0 or 2.1
++        CHECK(!((ptr[0] != 1 || ptr[1] != 0) && (ptr[0] != 2 || ptr[1] != 1)));
+ 
+         const uint8_t profile = ptr[2] >> 1;
+-        // profile == (0, 1, 9) --> AVC; profile = (2,3,4,5,6,7,8) --> HEVC;
++        // profile == (unknown,1,9) --> AVC; profile = (2,3,4,5,6,7,8) --> HEVC;
++        // profile == (10) --> AV1
+         if (profile > 1 &&  profile < 9) {
+             CHECK(format.findData(kKeyHVCC, &type, &data, &size));
+ 
+@@ -4326,6 +4390,8 @@ MPEG4Source::MPEG4Source(
+             CHECK_EQ((unsigned)ptr[0], 1u);  // configurationVersion == 1
+ 
+             mNALLengthSize = 1 + (ptr[14 + 7] & 3);
++        } else if (10 == profile) {
++            /* AV1 profile nothing to do */
+         } else {
+             CHECK(format.findData(kKeyAVCC, &type, &data, &size));
+ 
+@@ -5260,7 +5326,7 @@ status_t MPEG4Source::read(
+ 
+     if ((!mIsAVC
+ #ifdef DLB_VISION
+-        && !mIsDolbyVision
++        && !(mIsDolbyVision && mNALLengthSize)
+ #endif
+         && !mIsHEVC && !mIsAC4) || mWantsNALFragments) {
+         if (newBuffer) {
+@@ -5296,7 +5362,7 @@ status_t MPEG4Source::read(
+ 
+         if (!mIsAVC
+ #ifdef DLB_VISION
+-          && !mIsDolbyVision
++          && !(mIsDolbyVision && mNALLengthSize)
+ #endif
+         && !mIsHEVC && !mIsAC4) {
+             *out = mBuffer;
+diff --git a/media/libstagefright/Utils.cpp b/media/libstagefright/Utils.cpp
+index 852ce9f773..b9e04560e6 100644
+--- a/media/libstagefright/Utils.cpp
++++ b/media/libstagefright/Utils.cpp
+@@ -246,7 +246,9 @@ static void parseAvcProfileLevelFromAvcc(const uint8_t *ptr, size_t size, sp<AMe
+ #ifdef DLB_VISION
+ static void parseDolbyVisionProfileLevelFromDvcc(const uint8_t *ptr, size_t size, sp<AMessage> &format)
+ {
+-    if (size < 4 || ptr[0] != 1 || ptr[1] != 0) {  // dv_major_version == 1, dv_minor_version == 0
++    // dv_major.dv_minor Should be 1.0 or 2.1
++    if (size != 24 || ((ptr[0] != 1 || ptr[1] != 0) && (ptr[0] != 2 || ptr[1] != 1))) {
++        ALOGV("Size %zu, dv_major %d, dv_minor %d", size, ptr[0], ptr[1]);
+         return;
+     }
+ 
+@@ -278,6 +280,7 @@ static void parseDolbyVisionProfileLevelFromDvcc(const uint8_t *ptr, size_t size
+         { 7, OMX_VIDEO_DolbyVisionProfileDvheDtb },
+         { 8, OMX_VIDEO_DolbyVisionProfileDvheSt },
+         { 9, OMX_VIDEO_DolbyVisionProfileDvavSe },
++	{10, OMX_VIDEO_DolbyVisionProfileDvav110},
+     };
+ 
+     const static ALookup<uint8_t, OMX_VIDEO_DOLBYVISIONLEVELTYPE> levels {
+@@ -1664,9 +1667,30 @@ void convertMessageToMetaData(const sp<AMessage> &msg, sp<MetaData> &meta) {
+             meta->setData(kKeyAV1C, 0, csd0->data(), csd0->size());
+ #ifdef DLB_VISION
+         } else if (mime ==  MEDIA_MIMETYPE_VIDEO_DOLBY_VISION) {
+-            uint8_t dvcc[1024];
+-            size_t outsize = reassembleHVCC(csd0, dvcc, 1024, 4);
+-            meta->setData(kKeyDVCC, kKeyDVCC, dvcc, outsize);
++            if (msg->findBuffer("csd-2", &csd2)) {
++                //dvcc should be 24
++                if (csd2->size() == 24) {
++                    meta->setData(kKeyDVCC, kTypeDVCC, csd2->data(), csd2->size());
++                    uint8_t *dvcc = csd2->data();
++                    const uint8_t profile = dvcc[2] >> 1;
++                    if (profile > 1 && profile < 9) {
++                        std::vector<uint8_t> hvcc(csd0size + 1024);
++                        size_t outsize = reassembleHVCC(csd0, hvcc.data(), hvcc.size(), 4);
++                        meta->setData(kKeyHVCC, kTypeHVCC, hvcc.data(), outsize);
++                    } else if (DolbyVisionProfileDvav110 == profile) {
++                        meta->setData(kKeyAV1C, 0, csd0->data(), csd0->size());
++                    } else {
++                        sp<ABuffer> csd1;
++                        if (msg->findBuffer("csd-1", &csd1)) {
++                            std::vector<char> avcc(csd0size + csd1->size() + 1024);
++                            size_t outsize = reassembleAVCC(csd0, csd1, avcc.data());
++                            meta->setData(kKeyAVCC, kTypeAVCC, avcc.data(), outsize);
++                        }
++                    }
++                }
++            } else {
++                ALOGW("We need csd-2!!. %s", msg->debugString().c_str());
++            }
+ #endif
+         }  else if (mime == MEDIA_MIMETYPE_VIDEO_VP9) {
+             meta->setData(kKeyVp9CodecPrivate, 0, csd0->data(), csd0->size());
+@@ -1684,6 +1708,16 @@ void convertMessageToMetaData(const sp<AMessage> &msg, sp<MetaData> &meta) {
+                 meta->setData(kKeyVorbisBooks, 0, csd1->data(), csd1->size());
+             }
+         }
++#ifdef DLB_VISION
++    } else if (mime == MEDIA_MIMETYPE_VIDEO_DOLBY_VISION && msg->findBuffer("csd-2", &csd2)) {
++        meta->setData(kKeyDVCC, kTypeDVCC, csd2->data(), csd2->size());
++
++        if (msg->findBuffer("csd-avc", &csd0)) {
++            meta->setData(kKeyAVCC, kTypeAVCC, csd0->data(), csd0->size());
++        } else if (msg->findBuffer("csd-hevc", &csd0)) {
++            meta->setData(kKeyHVCC, kTypeHVCC, csd0->data(), csd0->size());
++        }
++#endif
+     }
+ 
+     int32_t timeScale;
+diff --git a/media/libstagefright/include/media/stagefright/MediaCodecConstants.h b/media/libstagefright/include/media/stagefright/MediaCodecConstants.h
+index 330c196e35..6868ed88de 100644
+--- a/media/libstagefright/include/media/stagefright/MediaCodecConstants.h
++++ b/media/libstagefright/include/media/stagefright/MediaCodecConstants.h
+@@ -224,6 +224,7 @@ constexpr int32_t DolbyVisionProfileDvheDth = 0x40;
+ constexpr int32_t DolbyVisionProfileDvheDtb = 0x80;
+ constexpr int32_t DolbyVisionProfileDvheSt = 0x100;
+ constexpr int32_t DolbyVisionProfileDvavSe = 0x200;
++constexpr int32_t DolbyVisionProfileDvav110 = 0x400;
+ 
+ constexpr int32_t DolbyVisionLevelHd24    = 0x1;
+ constexpr int32_t DolbyVisionLevelHd30    = 0x2;
+-- 
+2.25.1
+

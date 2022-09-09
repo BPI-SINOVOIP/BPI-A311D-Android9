@@ -1,0 +1,76 @@
+From f5a7a5f9e1654445dc6b727c8ac7b9c6a99779a3 Mon Sep 17 00:00:00 2001
+From: Ting Li <ting.li@amlogic.com>
+Date: Fri, 5 Jun 2020 15:44:26 +0800
+Subject: [PATCH] libgui: avoid double free
+
+PD#TV-18694
+
+Problem:
+apk will create 2 hwuitask, which caused thread synchronization bug
+for render thread show, which will causes RenderThread crash.
+
+Solution:
+add lock for layer array in DrawFrameTask.
+
+Change-Id: I0b4c44b37034795144cba60eb9b2167b0de47fa0
+Signed-off-by: Ting Li <ting.li@amlogic.com>
+---
+ libs/hwui/renderthread/DrawFrameTask.cpp | 14 ++++++++++----
+ libs/hwui/renderthread/DrawFrameTask.h   |  1 +
+ 2 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/libs/hwui/renderthread/DrawFrameTask.cpp b/libs/hwui/renderthread/DrawFrameTask.cpp
+index 51eeab7e46c..415efbcbc66 100644
+--- a/libs/hwui/renderthread/DrawFrameTask.cpp
++++ b/libs/hwui/renderthread/DrawFrameTask.cpp
+@@ -45,6 +45,8 @@ void DrawFrameTask::setContext(RenderThread* thread, CanvasContext* context,
+ }
+ 
+ void DrawFrameTask::pushLayerUpdate(DeferredLayerUpdater* layer) {
++    Mutex::Autolock _l(mUpdateLayer);
++    ALOGD("pushLayerUpdate %p",layer);
+     LOG_ALWAYS_FATAL_IF(!mContext,
+                         "Lifecycle violation, there's no context to pushLayerUpdate with!");
+ 
+@@ -57,6 +59,7 @@ void DrawFrameTask::pushLayerUpdate(DeferredLayerUpdater* layer) {
+ }
+ 
+ void DrawFrameTask::removeLayerUpdate(DeferredLayerUpdater* layer) {
++    Mutex::Autolock _l(mUpdateLayer);
+     for (size_t i = 0; i < mLayers.size(); i++) {
+         if (mLayers[i].get() == layer) {
+             mLayers.erase(mLayers.begin() + i);
+@@ -132,11 +135,14 @@ bool DrawFrameTask::syncFrameState(TreeInfo& info) {
+     mRenderThread->timeLord().vsyncReceived(vsync);
+     bool canDraw = mContext->makeCurrent();
+     mContext->unpinImages();
+-
+-    for (size_t i = 0; i < mLayers.size(); i++) {
+-        mLayers[i]->apply();
++    {
++        Mutex::Autolock _l(mUpdateLayer);
++        for (size_t i = 0; i < mLayers.size(); i++) {
++            ALOGD("syncFrameState layer %p",mLayers[i].get());
++            mLayers[i]->apply();
++        }
++        mLayers.clear();
+     }
+-    mLayers.clear();
+     mContext->setContentDrawBounds(mContentDrawBounds);
+     mContext->prepareTree(info, mFrameInfo, mSyncQueued, mTargetNode);
+ 
+diff --git a/libs/hwui/renderthread/DrawFrameTask.h b/libs/hwui/renderthread/DrawFrameTask.h
+index 2c46762fee5..89409c1b0ea 100644
+--- a/libs/hwui/renderthread/DrawFrameTask.h
++++ b/libs/hwui/renderthread/DrawFrameTask.h
+@@ -89,6 +89,7 @@ private:
+     void unblockUiThread();
+ 
+     Mutex mLock;
++    mutable Mutex mUpdateLayer;
+     Condition mSignal;
+ 
+     RenderThread* mRenderThread;
+-- 
+2.26.1
+

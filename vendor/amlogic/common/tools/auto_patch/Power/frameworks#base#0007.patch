@@ -1,0 +1,40 @@
+From 208e71e87b532d6f02e2f3636491064fccfd080a Mon Sep 17 00:00:00 2001
+From: Sandy Luo <sandy.luo@amlogic.com>
+Date: Fri, 13 Mar 2020 19:46:08 +0800
+Subject: [PATCH] ddr: change the STR mode to shutdown mode [2/2]
+
+PD#SWPL-22113
+
+Problem:
+In some cases, the software needs to do DDR window testing
+
+Solution:
+according to the ro.first.boot.ddr.window attribute, the STR mode is forced to be shutdown mode
+
+Verify:
+marconi
+
+Change-Id: I275f10a09ea78c749d8ba131a2d638fb1e534121
+Signed-off-by: Sandy Luo <sandy.luo@amlogic.com>
+---
+ services/core/java/com/android/server/policy/PhoneWindowManager.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index 36d16d5..f7c2eee 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -1515,7 +1515,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 + " count=" + count + " beganFromNonInteractive=" + mBeganFromNonInteractive +
+                 " mShortPressOnPowerBehavior=" + mShortPressOnPowerBehavior);
+         int definedPowerKey = whichPowerKeyDefinition();
+-        if (definedPowerKey == POWER_KEY_SHUTDOWN) {
++        final boolean ddrWindow = SystemProperties.getBoolean("ro.first.boot.ddr.window", false);
++        Slog.d(TAG, "definedPowerKey=" + definedPowerKey + ",ddrWindow=" + ddrWindow);
++        if (definedPowerKey == POWER_KEY_SHUTDOWN || ddrWindow) {
+             mPowerManager.shutdown(false,"userrequested",false);
+             return;
+         }
+-- 
+2.7.4
+

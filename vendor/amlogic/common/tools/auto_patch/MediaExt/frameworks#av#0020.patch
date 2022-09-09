@@ -1,0 +1,37 @@
+From 0ab627c156b0961be1c0777924a620f3272876be Mon Sep 17 00:00:00 2001
+From: "shuanglong.wang" <shuanglong.wang@amlogic.com>
+Date: Thu, 21 May 2020 10:53:51 +0800
+Subject: [PATCH] frameworks/av: trasform rotation angle to omx [1/1]
+
+PD#SWPL-26517
+
+Problem:
+trasform rotation angle to omx
+
+Solution:
+trasform rotation angle to omx
+
+Verify:
+verify by TL1
+
+Change-Id: I505305215d103e087701cb754506c71f1b67965d
+Signed-off-by: shuanglong.wang <shuanglong.wang@amlogic.com>
+---
+ media/libstagefright/ACodec.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 3a22e6ed8b..bcbbea6ab6 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -2009,6 +2009,7 @@ status_t ACodec::configureCodec(
+         int32_t rotationDegrees;
+         if (msg->findInt32("rotation-degrees", &rotationDegrees)) {
+             mRotationDegrees = rotationDegrees;
++            msg->setInt32("vendor.rotation-angle.angle", mRotationDegrees);
+         } else {
+             mRotationDegrees = 0;
+         }
+-- 
+2.25.1
+
