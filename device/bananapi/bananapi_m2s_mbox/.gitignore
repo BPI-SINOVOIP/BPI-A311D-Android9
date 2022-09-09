@@ -1,0 +1,4 @@
+bootloader.img
+/upgrade/u-boot.bin.sd.bin
+/upgrade/u-boot.bin.usb.bl2
+/upgrade/u-boot.bin.usb.tpl
