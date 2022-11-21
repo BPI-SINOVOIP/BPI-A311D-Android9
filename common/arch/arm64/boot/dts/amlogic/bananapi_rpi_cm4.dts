@@ -1,5 +1,5 @@
 /*
- * arch/arm64/boot/dts/amlogic/bananapi_cm4.dts
+ * arch/arm64/boot/dts/amlogic/bananapi_rpi_cm4.dts
  *
  * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
  *
@@ -19,11 +19,11 @@
 
 #include "partition_mbox_normal_P_32.dtsi"
 #include "mesong12b.dtsi"
-#include "bananapi_panel.dtsi"
+//#include "bananapi_panel.dtsi"
 
 / {
-	model = "Bananapi BPI-CM4";
-	amlogic-dt-id = "bananapi_cm4_a311d";
+	model = "Amlogic";
+	amlogic-dt-id = "bananapi_rpicm4_a311d";
 	compatible = "amlogic, g12b";
 	interrupt-parent = <&gic>;
 	#address-cells = <2>;
@@ -366,7 +366,7 @@
 
 	adc_keypad {
 		compatible = "amlogic, adc_keypad";
-		status = "okay";
+		status = "disabled";
 		key_name = "power";
 		key_num = <1>;
 		io-channels = <&saradc SARADC_CH2>;
@@ -731,7 +731,7 @@
 
 	sensor: sensor {
 		compatible = "soc, sensor";
-		status = "okay";
+		status = "disabled";
 		sensor-name = "os08a10"; /*imx290;os08a10;imx227*/
 		pinctrl-names="default";
 		pinctrl-0=<&gen_clk_ee_ao>;
@@ -740,12 +740,12 @@
 		//power-enable = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
 		reset = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
 		//pwdn = <&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
-		ir_cut_gpio = <&gpio GPIOA_4 GPIO_ACTIVE_HIGH>;
+		//ir_cut_gpio = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
 	};
 
 	iq: iq {
 		compatible = "soc, iq";
-		status = "okay";
+		status = "disabled";
 		sensor-name = "os08a10"; /*imx290;os08a10;imx227*/
 	};
 
@@ -753,7 +753,7 @@
 		compatible = "pwm-gpio";
 		#pwm-cells = <3>;
 		pwm-gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pwmfan:pwm-fan {
@@ -776,7 +776,7 @@
 };
 
 &isp {
-	status = "okay";
+	status = "disabled";
 	temper-line-offset = <0x1E00>;
 	temper-buf-size = <32>;
 	temper-frame-num = <1>;
@@ -785,7 +785,7 @@
 };
 
 &adapter {
-	status = "okay";
+	status = "disabled";
 	mem_alloc = <24>;
 	memory-region = <&adapt_cma_reserved>;
 };
@@ -819,6 +819,7 @@
 
 	sensor-i2c@6c {
 		compatible = "arm, i2c-sensor";
+		status = "disabled";
 		reg = <0x6c>;
 		reg-names = "i2c-sensor";
 		slave-addr = <0x6c>;
@@ -830,14 +831,14 @@
 	rtc-pcf85063@51 {
 		compatible = "nxp,pcf85063";
 		reg = <0x51>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	fan-emc2301@2f {
 		compatible = "microchip,emc2301";
 		reg = <0x2f>;
 		#cooling-cells = <0x02>;
-		status = "disabled";
+		status = "okay";
 
 		fan0: fan@0 {
 			min-rpm = /bits/ 16 <500>;
@@ -854,7 +855,7 @@
 };
 
 &i2c3 {
-	status = "okay";
+	status = "disabled";
 	pinctrl-names="default";
 	pinctrl-0=<&i2c3_master_pins2>; /* GPIOA_14,GPIOA_15 */
 	clock-frequency = <400000>; /* default 100k */
@@ -1358,4 +1359,8 @@
 	pinctrl-0 = <&spicc0_pins_x>;
 	num_chipselect = <1>;
 	cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
+};
+
+&vrtc {
+	status = "disabled";
 };
