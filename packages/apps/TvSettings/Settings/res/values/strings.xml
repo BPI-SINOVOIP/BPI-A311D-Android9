@@ -1646,6 +1646,11 @@
 
     <!-- concat two strings, e.g. "Android Keyboard, My Pass" [CHAR LIMIT=NONE] -->
     <string name="string_concat"><xliff:g id="part1">%1s</xliff:g>, <xliff:g id="part2">%2s</xliff:g></string>
+
+    <!-- mobile network settings -->
+    <string name="network_category_title">Mobile network</string>
+    <string name="network_settings_title">Mobile settings</string>
+    
      <!-- Bluetooth interface -->
     <string name="bluetooth">Bluetooth</string>
     <string name="bluetooth_rename">Rename</string>

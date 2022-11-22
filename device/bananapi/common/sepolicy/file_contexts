@@ -113,6 +113,14 @@
 /dev/hidraw[0-3]			u:object_r:hidraw_device:s0
 /dev/galcore                    u:object_r:galcore_device:s0
 
+#quectel ec20/ec25
+/dev/ttyUSB[0-9]                u:object_r:radio_device:s0
+/dev/ttyACM[0-9]                u:object_r:radio_device:s0
+/dev/cdc-wdm[0-9]               u:object_r:radio_device:s0
+/dev/qcqmi[0-9]                 u:object_r:radio_device:s0
+/vendor/bin/hw/rild             u:object_r:rild_exec:s0
+/dev/socket/rildOemHook         u:object_r:rild_socket:s0
+
 /sys/devices/platform/bt-dev/rfkill/rfkill0/state	        u:object_r:sysfs_bluetooth_writable:s0
 /sys/devices/platform/bt-dev/rfkill/rfkill0/type	        u:object_r:sysfs_bluetooth_writable:s0
 /sys/devices/bt-dev.*/rfkill/rfkill0/state		        u:object_r:sysfs_bluetooth_writable:s0
