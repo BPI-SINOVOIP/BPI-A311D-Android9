@@ -59,7 +59,7 @@ else
 -include device/bananapi/common/arm_isp_modules.mk
 -include device/bananapi/common/tb_modules.mk
 
-KERNEL_DEVICETREE := bananapi_m2s bananapi_m2s_922x bananapi_cm4
+KERNEL_DEVICETREE := bananapi_m2s bananapi_m2s_922x bananapi_cm4 bananapi_cm4_rpi
 KERNEL_DEFCONFIG := meson64_defconfig
 KERNEL_ARCH := arm64
 

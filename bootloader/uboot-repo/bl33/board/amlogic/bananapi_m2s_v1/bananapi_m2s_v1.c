@@ -687,10 +687,14 @@ U_BOOT_DEVICES(meson_pwm) = {
 
 #define BOARD_TYPE_CHANNEL		0
 #define BOARD_REV_CHANNEL		1
+#define CM4IO_BOARD_TYPE_CHANNEL	3
 
 #define BOARD_S922X_M2S			0
 #define BOARD_A311D_M2S			1
 #define BOARD_A311D_CM4			2
+
+#define BOARD_CM4IO_BPI                 0
+#define BOARD_CM4IO_RPI                 1
 
 int get_adc_value(int channel)
 {
@@ -701,48 +705,81 @@ int get_adc_value(int channel)
 	val = get_adc_sample_gxbb(channel);
 	saradc_disable();
 
-	printf("ADC=%d\n", val);
+	printf("channel = %d, ADC=%d\n", channel, val);
 	return val;
 }
 
-int get_hw_revision(void)
+int get_board_type(void)
 {
-	int board_type, board_rev;
 
-	board_type = get_adc_value(BOARD_TYPE_CHANNEL);
-	board_rev = get_adc_value(BOARD_REV_CHANNEL);
+	int board_type = -1;
+	int adc_val;
 
-	if (IS_RANGE(board_rev, 900, 1100)) {  /* m2s */
-		printf("BPI hw revision: bananapi_m2s_v1\n");
+	adc_val = get_adc_value(BOARD_TYPE_CHANNEL);
+#if 0
+	if (IS_RANGE(adc_val, 0, 50)) {    		/* s922x m2s */
+		//setenv for test adc
+		printf("Board is Bananapi S922X M2S\n");
+		setenv("board_type", "S922X_M2S");
 		setenv("board", "bananapi_m2s");
-
-		if (IS_RANGE(board_type, 0, 50)) {    /* s922x m2s */
-			//setenv for test adc
-			printf("Board is S922X M2S\n");
-			setenv("board_type", "S922X_M2S");
-			return BOARD_S922X_M2S;
-		}
-		else if (IS_RANGE(board_type, 900, 1100)) {   /* a311d m2s */
-			//setenv for test adc
-			printf("Board is A311D M2S\n");
-			setenv("board_type", "A311D_M2S");
-			return BOARD_A311D_M2S;
-		}
-	}
-	else if (IS_RANGE(board_rev, 0, 50)) {  /* cm4 */
-		printf("BPI hw revision: bananapi_cm4_v1\n");
+		board_type = BOARD_S922X_M2S;
+	} else if (IS_RANGE(adc_val, 900, 1100)) {	/* a311d m2s */
+		//setenv for test adc
+		printf("Board is Bananapi A311D M2S\n");
+		setenv("board_type", "A311D_M2S");
+		setenv("board", "bananapi_m2s");
+		board_type = BOARD_A311D_M2S;
+	} else if (IS_RANGE(adc_val, 470, 550)) {	/* a311d cm4 */
+		//setenv for test adc
+		printf("Board is Bananapi A311D CM4\n");
+		setenv("board_type", "A311D_CM4");
 		setenv("board", "bananapi_cm4");
+		board_type = BOARD_A311D_CM4;
+	}
+#else
+	if (IS_RANGE(adc_val, 900, 1100)) {       /* a311d cm4 */
+                //setenv for test adc
+                printf("Board is Bananapi A311D CM4\n");
+                setenv("board_type", "A311D_CM4");
+                setenv("board", "bananapi_cm4");
+                board_type = BOARD_A311D_CM4;
+        }
+#endif
 
-		if (IS_RANGE(board_type, 900, 1100)) {   /* a311d m2s */
-			//setenv for test adc
-			printf("Board is A311D CM4\n");
-			setenv("board_type", "A311D_CM4");
-			return BOARD_A311D_CM4;
-                }
+	return board_type;
+}
+
+int get_cm4io_board_type(void)
+{
+	int board_type = -1;
+	int adc_val;
+
+	adc_val = get_adc_value(CM4IO_BOARD_TYPE_CHANNEL);
+	if (IS_RANGE(adc_val, 0, 50)) {		/* board is rpi cm4io */
+		printf("IO Board is BPI CM4IO\n");
+		board_type = BOARD_CM4IO_BPI;
+	} else if (IS_RANGE(adc_val, 900, 1100)) {		/* board is bpi cm4io */
+		printf("IO Board is RPI CM4IO\n");
+		board_type = BOARD_CM4IO_RPI;
 	}
 
-	return -1;
+	return board_type;
 }
+
+#if 0
+int get_board_revision(void)
+{
+	int board_rev = -1;
+	int adc_val;
+
+	adc_val = get_adc_value(BOARD_REV_CHANNEL);
+
+	if (IS_RANGE(adc_val, 900, 1100))
+		board_rev = BOARD_REVISION(2022, 04, 20);
+
+	return board_rev;
+}
+#endif
 
 int board_init(void)
 {
@@ -840,8 +877,6 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-	//get_hw_revision();
-
 	TE(__func__);
 	return 0;
 }
@@ -893,7 +928,7 @@ int checkhw(char * name)
 	printf("cpu_id.layout_ver: %x\n", cpu_id.layout_ver);
 
 	if (cpu_id.chip_rev == MESON_CPU_CHIP_REVISION_B) {
-		switch (get_hw_revision()) {
+		switch (get_board_type()) {
 			case BOARD_S922X_M2S:
 				strcpy(loc_name, "bananapi_m2s_922x\0");
 				setenv("fdtfile", "bananapi_m2s_922x.dtb");
@@ -903,8 +938,13 @@ int checkhw(char * name)
 				setenv("fdtfile", "bananapi_m2s.dtb");
 				break;
 			case BOARD_A311D_CM4:
-				strcpy(loc_name, "bananapi_cm4_a311d\0");
-				setenv("fdtfile", "bananapi_cm4.dtb");
+				if (get_cm4io_board_type() == BOARD_CM4IO_BPI) {
+					strcpy(loc_name, "bananapi_cm4_a311d\0");
+					setenv("fdtfile", "bananapi_cm4.dtb");
+				} else if (get_cm4io_board_type() == BOARD_CM4IO_RPI) {
+					strcpy(loc_name, "bananapi_rpicm4_a311d\0");
+					setenv("fdtfile", "bananapi_cm4_rpi.dtb");
+				}
 				break;
 			default:
 				strcpy(loc_name, "unsupport");
