@@ -758,9 +758,11 @@ int get_cm4io_board_type(void)
 	if (IS_RANGE(adc_val, 0, 50)) {		/* board is rpi cm4io */
 		printf("IO Board is BPI CM4IO\n");
 		board_type = BOARD_CM4IO_BPI;
+		setenv("ioboard_type", "BPI_CM4IO");
 	} else if (IS_RANGE(adc_val, 900, 1100)) {		/* board is bpi cm4io */
 		printf("IO Board is RPI CM4IO\n");
 		board_type = BOARD_CM4IO_RPI;
+		setenv("ioboard_type", "RPI_CM4IO");
 	}
 
 	return board_type;

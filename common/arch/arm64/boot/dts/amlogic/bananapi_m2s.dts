@@ -142,7 +142,7 @@
 		vdin0_cma_reserved:linux,vdin0_cma {
 			compatible = "shared-dma-pool";
 			reusable;
-		/* 1920x1080x2x4  =16+4 M */
+			/* 1920x1080x2x4  =16+4 M */
 			size = <0x0 0x04000000>;
 			alignment = <0x0 0x400000>;
 		};
@@ -1311,6 +1311,14 @@
 	status = "okay";
 };
 
+&spicc0 {
+        status = "disabled";
+        pinctrl-names = "default";
+        pinctrl-0 = <&spicc0_pins_x>;
+        num_chipselect = <1>;
+        cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
+};
+
 &remote {
 	status = "disabled";
 };
@@ -1361,12 +1369,4 @@
 
 &irblaster {
 	status = "disabled";
-};
-
-&spicc0 {
-	status = "disabled";
-	pinctrl-names = "default";
-	pinctrl-0 = <&spicc0_pins_x>;
-	num_chipselect = <1>;
-	cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
 };

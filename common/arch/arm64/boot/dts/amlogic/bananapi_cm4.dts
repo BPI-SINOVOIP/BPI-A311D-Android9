@@ -753,7 +753,7 @@
 		compatible = "pwm-gpio";
 		#pwm-cells = <3>;
 		pwm-gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pwmfan:pwm-fan {
