@@ -768,9 +768,47 @@
 }; /* end of / */
 
 &soc_thermal {
+	trips {
+		pcontrol: trip-point@1 {
+			temperature = <75000>;
+			hysteresis = <5000>;
+			type = "passive";
+		};
+		fan_0: trip-point@4 {
+			temperature = <55000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+		fan_1: trip-point@5 {
+			temperature = <75000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
 	cooling-maps {
-		cpucore_cooling_map0 {
+		cpufreq_cooling_map0 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool0 0 7>;
+			contribution = <1024>;
+		};
+		cpufreq_cooling_map1 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool1 0 7>;
+			contribution = <1024>;
+		};
+		cpucore_cooling_map {
 			trip = <&phot>;
+			cooling-device = <&cpucore_cool 2 5>;
+			contribution = <1024>;
+		};
+		fan_cooling_map0 {
+			trip = <&fan_0>;
+			cooling-device = <&fan 2 6>;
+		};
+		fan_cooling_map1 {
+			trip = <&fan_1>;
+			cooling-device = <&fan 7 10>;
 		};
 	};
 };
@@ -834,17 +872,21 @@
 		status = "okay";
 	};
 
-	fan-emc2301@2f {
-		compatible = "microchip,emc2301";
-		reg = <0x2f>;
-		#cooling-cells = <0x02>;
+	fan: emc2301@2f {
+		compatible = "microchip,emc2305";
 		status = "okay";
+		reg = <0x2f>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#cooling-cells = <0x02>;
+		microchip,cooling-levels = /bits/ 8 <10>;
 
-		fan0: fan@0 {
-			min-rpm = /bits/ 16 <500>;
-			max-rpm = /bits/ 16 <5500>;
+		channel@0 {
+			reg = <0>;
+			pwm-min = /bits/ 8 <0>;
 		};
 	};
+
 };
 
 &i2c2 {

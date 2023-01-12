@@ -768,9 +768,29 @@
 }; /* end of / */
 
 &soc_thermal {
+	trips {
+		pcontrol: trip-point@1 {
+			temperature = <75000>;
+			hysteresis = <5000>;
+			type = "passive";
+		};
+	};
+
 	cooling-maps {
-		cpucore_cooling_map0 {
+		cpufreq_cooling_map0 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool0 0 7>;
+			contribution = <1024>;
+		};
+		cpufreq_cooling_map1 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool1 0 7>;
+			contribution = <1024>;
+		};
+		cpucore_cooling_map {
 			trip = <&phot>;
+			cooling-device = <&cpucore_cool 2 5>;
+			contribution = <1024>;
 		};
 	};
 };
