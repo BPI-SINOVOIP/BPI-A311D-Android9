@@ -676,7 +676,7 @@ U_BOOT_DEVICES(meson_pwm) = {
 };
 #endif /*end CONFIG_PWM_MESON*/
 
-#define IS_RANGE(x, min, max)   ((x) > (min) && (x) < (max))
+#define IS_RANGE(x, min, max)   ((x) >= (min) && (x) < (max))
 /*
  * Board revision in the form of YYYYMMDD as hexadecimal
  * ex) BOARD_REVISION(2018, 07, 16)  -> 0x20180716
@@ -716,7 +716,6 @@ int get_board_type(void)
 	int adc_val;
 
 	adc_val = get_adc_value(BOARD_TYPE_CHANNEL);
-#if 0
 	if (IS_RANGE(adc_val, 0, 50)) {    		/* s922x m2s */
 		//setenv for test adc
 		printf("Board is Bananapi S922X M2S\n");
@@ -736,15 +735,6 @@ int get_board_type(void)
 		setenv("board", "bananapi_cm4");
 		board_type = BOARD_A311D_CM4;
 	}
-#else
-	if (IS_RANGE(adc_val, 900, 1100)) {       /* a311d cm4 */
-                //setenv for test adc
-                printf("Board is Bananapi A311D CM4\n");
-                setenv("board_type", "A311D_CM4");
-                setenv("board", "bananapi_cm4");
-                board_type = BOARD_A311D_CM4;
-        }
-#endif
 
 	return board_type;
 }
@@ -755,11 +745,11 @@ int get_cm4io_board_type(void)
 	int adc_val;
 
 	adc_val = get_adc_value(CM4IO_BOARD_TYPE_CHANNEL);
-	if (IS_RANGE(adc_val, 0, 50)) {		/* board is rpi cm4io */
+	if (IS_RANGE(adc_val, 0, 50)) {			/* board is bpi cm4io */
 		printf("IO Board is BPI CM4IO\n");
 		board_type = BOARD_CM4IO_BPI;
 		setenv("ioboard_type", "BPI_CM4IO");
-	} else if (IS_RANGE(adc_val, 900, 1100)) {		/* board is bpi cm4io */
+	} else if (IS_RANGE(adc_val, 900, 1100)) {	/* board is rpi cm4io */
 		printf("IO Board is RPI CM4IO\n");
 		board_type = BOARD_CM4IO_RPI;
 		setenv("ioboard_type", "RPI_CM4IO");
