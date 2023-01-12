@@ -48,9 +48,16 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.vendor.autoconnectbt.btclass=50c \
     ro.vendor.autoconnectbt.nameprefix=Amlogic_RC \
     ro.vendor.autoconnectbt.rssilimit=70
-#if wifi Only
-PRODUCT_PROPERTY_OVERRIDES +=  \
-    ro.radio.noril=false
+
+# quectel ec20/ec25
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.telephony.default_network=9 \
+    rild.libpath=/vendor/lib64/libquectel-ril.so \
+    rild.libargs=-d /dev/ttyUSB0 \
+    ro.boot.noril=false \
+    keyguard.no_require_sim=true \
+    ro.com.android.dataroaming=true \
+    ril.function.dataonly=1
 
 #if need pppoe
 PRODUCT_PROPERTY_OVERRIDES +=  \

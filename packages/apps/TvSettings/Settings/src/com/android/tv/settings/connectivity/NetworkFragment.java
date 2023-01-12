@@ -31,6 +31,7 @@ import android.support.v7.preference.PreferenceManager;
 import android.support.v7.preference.TwoStatePreference;
 import android.util.Log;
 import android.text.TextUtils;
+import android.telephony.TelephonyManager;
 
 import com.android.internal.logging.nano.MetricsProto;
 import com.android.settingslib.wifi.AccessPoint;
@@ -57,6 +58,8 @@ public class NetworkFragment extends SettingsPreferenceFragment implements
     private static final String KEY_WIFI_OTHER = "wifi_other";
     private static final String KEY_WIFI_ADD = "wifi_add";
     private static final String KEY_WIFI_ALWAYS_SCAN = "wifi_always_scan";
+    private static final String KEY_MOBILE_CATEGORY = "mobile_network_category";
+    private static final String KEY_MOBILE_SETTINGS = "mobile_network_settings";
     private static final String KEY_ETHERNET = "ethernet";
     private static final String KEY_ETHERNET_STATUS = "ethernet_status";
     private static final String KEY_ETHERNET_PROXY = "ethernet_proxy";
@@ -73,6 +76,8 @@ public class NetworkFragment extends SettingsPreferenceFragment implements
     private CollapsibleCategory mWifiNetworksCategory;
     private Preference mCollapsePref;
     private Preference mAddPref;
+    private Preference mMobilePref;
+    private PreferenceCategory mMobileCategory;
     private TwoStatePreference mAlwaysScan;
     private PreferenceCategory mEthernetCategory;
     private Preference mEthernetStatusPref;
@@ -149,6 +154,8 @@ public class NetworkFragment extends SettingsPreferenceFragment implements
         mWifiNetworksCategory = (CollapsibleCategory) findPreference(KEY_WIFI_LIST);
         mCollapsePref = findPreference(KEY_WIFI_COLLAPSE);
         mAddPref = findPreference(KEY_WIFI_ADD);
+        mMobileCategory = (PreferenceCategory) findPreference(KEY_MOBILE_CATEGORY);
+        mMobilePref = findPreference(KEY_MOBILE_SETTINGS);
         mAlwaysScan = (TwoStatePreference) findPreference(KEY_WIFI_ALWAYS_SCAN);
 
         mEthernetCategory = (PreferenceCategory) findPreference(KEY_ETHERNET);
@@ -197,9 +204,28 @@ public class NetworkFragment extends SettingsPreferenceFragment implements
             case KEY_WIFI_ADD:
                 mMetricsFeatureProvider.action(getActivity(),
                         MetricsProto.MetricsEvent.ACTION_WIFI_ADD_NETWORK);
+            case KEY_MOBILE_SETTINGS:
+                mMetricsFeatureProvider.action(getActivity(),
+                        MetricsProto.MetricsEvent.SETTINGS_MOBILE_NETWORK_CATEGORY);
                 break;
         }
         return super.onPreferenceTreeClick(preference);
+    }
+
+    private boolean hasSimCard() {
+       TelephonyManager telMgr = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+       int simState = telMgr.getSimState();
+       boolean result = true;
+       switch (simState) {
+           case TelephonyManager.SIM_STATE_ABSENT:
+                result = false;
+                break;
+           case TelephonyManager.SIM_STATE_UNKNOWN:
+                result = false;
+                break;
+       }
+       Log.d(TAG, result ? "has sim card" : "no sim card");
+       return result;
     }
 
     private void updateConnectivity() {
@@ -213,6 +239,13 @@ public class NetworkFragment extends SettingsPreferenceFragment implements
         mWifiNetworksCategory.setVisible(wifiEnabled);
         mCollapsePref.setVisible(wifiEnabled && mWifiNetworksCategory.shouldShowCollapsePref());
         mAddPref.setVisible(wifiEnabled);
+        if (hasSimCard()) {
+            mMobileCategory.setVisible(true);
+            mMobilePref.setVisible(true);
+        } else {
+            mMobileCategory.setVisible(false);
+            mMobilePref.setVisible(false);
+        }
 
         if (!wifiEnabled) {
             updateWifiList();

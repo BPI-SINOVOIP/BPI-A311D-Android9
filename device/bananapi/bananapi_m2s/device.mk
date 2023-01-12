@@ -96,6 +96,19 @@ DEVICE_PACKAGE_OVERLAYS := \
 endif
 PRODUCT_TAGS += dalvik.gc.type-precise
 
+# quectel ec20/ec25
+PRODUCT_PACKAGES += \
+    rild \
+    dhcpcd \
+    TeleService
+
+PRODUCT_COPY_FILES += \
+    device/bananapi/common/modem/libquectel-ril/chat:system/bin/chat \
+    device/bananapi/common/modem/libquectel-ril/libquectel-ril.so:vendor/lib/libquectel-ril.so \
+    device/bananapi/common/modem/libquectel-ril/ip-up:system/etc/ppp/ip-up \
+    device/bananapi/common/modem/libquectel-ril/ip-down:system/etc/ppp/ip-down \
+    device/bananapi/common/modem/apns-conf.xml:system/etc/apns-conf.xml \
+    device/bananapi/common/modem/ql-ril.conf:system/etc/ql-ril.conf
 
 # Light HAL
 PRODUCT_PACKAGES += \
@@ -103,11 +116,6 @@ PRODUCT_PACKAGES += \
 
 # setup dalvik vm configs.
 $(call inherit-product, frameworks/native/build/tablet-10in-xhdpi-2048-dalvik-heap.mk)
-
-
-
-
-
 
 #To remove healthd from the build
 PRODUCT_PACKAGES += android.hardware.health@2.0-service.override

@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source ./env.sh
+
 if [ $# -eq 1 ] && [ $1 == "help" ]; then
     printf "Usage:\n"
     printf "./device/bananapi/common/quick_compile.sh\n"
@@ -13,8 +15,8 @@ if [ $# -eq 1 ] && [ $1 == "help" ]; then
     exit
 fi
 #Project Name          SOC Name                Hardware Name                  device/bananapi project name        uboot compile params                 tdk path
-project[1]="m2s"       ;soc[1]="A311D"        ;hardware[1]="BANANAPI_M2S"     ;module[1]="bananapi_m2s"           ;uboot[1]="bananapi_m2s_v1"           ;tdk[1]="g12a/bl32.img"
-#project[2]="m2s_mbox"  ;soc[2]="A311D"        ;hardware[2]="BANANAPI_M2S"     ;module[2]="bananapi_m2s_mbox"      ;uboot[2]="bananapi_m2s_v1"           ;tdk[2]="g12a/bl32.img"
+project[1]="m2s/cm4"       ;soc[1]="A311D"        ;hardware[1]="BANANAPI_M2S"     ;module[1]="bananapi_m2s"           ;uboot[1]="bananapi_m2s_v1"           ;tdk[1]="g12a/bl32.img"
+#project[2]="m2s/cm4_mbox"  ;soc[2]="A311D"        ;hardware[2]="BANANAPI_M2S"     ;module[2]="bananapi_m2s_mbox"      ;uboot[2]="bananapi_m2s_v1"           ;tdk[2]="g12a/bl32.img"
 
 platform_avb_param=""
 platform_type=1
@@ -68,7 +70,7 @@ if [ $# -eq 1 ]; then
     || [ $1 == "vendorimage" ] \
     || [ $1 == "odm_image" ] \
     || [ $1 == "dtbimage" ] ; then
-        make $1 -j8
+        make $1 -j16
         exit
     fi
 fi
@@ -77,6 +79,6 @@ cd bootloader/uboot-repo
 compile_uboot
 
 cd ../../
-make otapackage -j8
+make otapackage -j16
 
 

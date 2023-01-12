@@ -1,5 +1,5 @@
 /*
- * arch/arm64/boot/dts/amlogic/bananapi_m2s.dts
+ * arch/arm64/boot/dts/amlogic/bananapi_rpi_cm4.dts
  *
  * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
  *
@@ -19,10 +19,11 @@
 
 #include "partition_mbox_normal_P_32.dtsi"
 #include "mesong12b.dtsi"
+//#include "bananapi_panel.dtsi"
 
 / {
-	model = "Bananapi BPI-M2S";
-	amlogic-dt-id = "bananapi_m2s_922x";
+	model = "Amlogic";
+	amlogic-dt-id = "bananapi_rpicm4_a311d";
 	compatible = "amlogic, g12b";
 	interrupt-parent = <&gic>;
 	#address-cells = <2>;
@@ -41,6 +42,7 @@
 		i2c4 = &i2c_AO;
 		tsensor0 = &p_tsensor;
 		tsensor1 = &d_tsensor;
+		spi0 = &spicc0;
 	};
 /*
 	memory@00000000 {
@@ -119,6 +121,7 @@
 			compatible = "shared-dma-pool";
 			size = <0x0 0x0>;
 		};
+
 		codec_mm_cma:linux,codec_mm_cma {
 			compatible = "shared-dma-pool";
 			reusable;
@@ -137,16 +140,14 @@
 		};
 		/*  vdin0 CMA pool */
 		vdin0_cma_reserved:linux,vdin0_cma {
-			status = "disabled";
 			compatible = "shared-dma-pool";
 			reusable;
-			/* 1920x1080x2x4  =16+4 M */
+		/* 1920x1080x2x4  =16+4 M */
 			size = <0x0 0x04000000>;
 			alignment = <0x0 0x400000>;
 		};
 		/*  vdin1 CMA pool */
 		vdin1_cma_reserved:linux,vdin1_cma {
-			status = "disabled";
 			compatible = "shared-dma-pool";
 			reusable;
 			/* 1920x1080x2x4  =16 M */
@@ -154,7 +155,6 @@
 			alignment = <0x0 0x400000>;
 		};
 		galcore_reserved:linux,galcore {
-			status = "disabled";
 			compatible = "shared-dma-pool";
 			reusable;
 			size = <0x0 0x1000000>;
@@ -164,20 +164,20 @@
 		isp_cma_reserved:linux,isp_cma {
 			compatible = "shared-dma-pool";
 			reusable;
-			status = "disabled";
+			status = "okay";
 			size = <0x0 0x06800000>;
 			alignment = <0x0 0x400000>;
 		};
 		adapt_cma_reserved:linux,adapt_cma {
 			compatible = "shared-dma-pool";
 			reusable;
-			status = "disabled";
+			status = "okay";
 			size = <0x0 0x01800000>;
 			alignment = <0x0 0x400000>;
 		};
 	};
 	galcore {
-		status = "disabled";
+		status = "okay";
 		memory-region = <&galcore_reserved>;
 	};
 
@@ -238,19 +238,19 @@
 	bt-dev{
 		compatible = "amlogic, bt-dev";
 		dev_name = "bt-dev";
-		status = "disabled";
-		gpio_reset = <&gpio GPIOX_17 GPIO_ACTIVE_HIGH>;
-		gpio_hostwake = <&gpio GPIOX_19 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+		gpio_reset = <&gpio GPIOX_19 GPIO_ACTIVE_HIGH>;
+		//gpio_hostwake = <&gpio GPIOX_19 GPIO_ACTIVE_HIGH>;
 		gpio_btwakeup = <&gpio GPIOX_18 GPIO_ACTIVE_HIGH>;
 	};
 
 	wifi{
 		compatible = "amlogic, aml_wifi";
 		dev_name = "aml_wifi";
-		status = "disabled";
-		interrupt_pin = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
-		irq_trigger_type = "GPIO_IRQ_LOW";
-		power_on_pin = <&gpio GPIOX_6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+		//interrupt_pin = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
+		//irq_trigger_type = "GPIO_IRQ_LOW";
+		power_on_pin = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
 		/* if use bcm wifi, config dhd_static_buf */
 		/*dhd_static_buf;*/
 		pinctrl-names = "default";
@@ -366,7 +366,7 @@
 
 	adc_keypad {
 		compatible = "amlogic, adc_keypad";
-		status = "okay";
+		status = "disabled";
 		key_name = "power";
 		key_num = <1>;
 		io-channels = <&saradc SARADC_CH2>;
@@ -576,7 +576,7 @@
 		/* max 0xff, each bit for one channel */
 		channel_mask = <0x3>;
 	};
-	auge_sound {
+	aml_sound: auge_sound {
 		compatible = "amlogic, g12a-sound-card";
 		aml-audio-card,name = "AML-AUGESOUND";
 
@@ -740,7 +740,7 @@
 		//power-enable = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
 		reset = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
 		//pwdn = <&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
-		ir_cut_gpio = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
+		//ir_cut_gpio = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
 	};
 
 	iq: iq {
@@ -753,7 +753,7 @@
 		compatible = "pwm-gpio";
 		#pwm-cells = <3>;
 		pwm-gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pwmfan:pwm-fan {
@@ -763,60 +763,14 @@
 		cooling-max-state = <3>;
 		#cooling-cells = <2>;
 		cooling-levels = <0 120 170 220>;
-		status = "okay";
+		status = "disabled";
 	};
 }; /* end of / */
 
 &soc_thermal {
-	trips {
-		pcontrol: trip-point@1 {
-			temperature = <75000>;
-			hysteresis = <5000>;
-			type = "passive";
-		};
-		fan_0: trip-point@4 {
-			temperature = <55000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-		fan_1: trip-point@5 {
-			temperature = <65000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-		fan_2: trip-point@6 {
-			temperature = <75000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-	};
 	cooling-maps {
-		cpufreq_cooling_map0 {
-			trip = <&pcontrol>;
-			cooling-device = <&cpufreq_cool0 0 7>;
-			contribution = <1024>;
-		};
-		cpufreq_cooling_map1 {
-			trip = <&pcontrol>;
-			cooling-device = <&cpufreq_cool1 0 7>;
-			contribution = <1024>;
-		};
-		cpucore_cooling_map {
+		cpucore_cooling_map0 {
 			trip = <&phot>;
-			cooling-device = <&cpucore_cool 2 5>;
-			contribution = <1024>;
-		};
-		fan_cooling_map0 {
-			trip = <&fan_0>;
-			cooling-device = <&pwmfan 0 1>;
-		};
-		fan_cooling_map1 {
-			trip = <&fan_1>;
-			cooling-device = <&pwmfan 1 2>;
-		};
-		fan_cooling_map2 {
-			trip = <&fan_2>;
-			cooling-device = <&pwmfan 2 3>;
 		};
 	};
 };
@@ -850,7 +804,7 @@
 };
 
 &pwm_ef {
-	status = "disabled";
+	status = "okay";
 };
 
 &pwm_AO_cd {
@@ -858,7 +812,7 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_master_pins3>; /* GPIOH_6,GPIOH_7 */
 	clock-frequency = <400000>;
@@ -873,6 +827,24 @@
 		reg-data-type = <1>;
 		link-device = <&phycsi>;
 	};
+
+	rtc-pcf85063@51 {
+		compatible = "nxp,pcf85063";
+		reg = <0x51>;
+		status = "okay";
+	};
+
+	fan-emc2301@2f {
+		compatible = "microchip,emc2301";
+		reg = <0x2f>;
+		#cooling-cells = <0x02>;
+		status = "okay";
+
+		fan0: fan@0 {
+			min-rpm = /bits/ 16 <500>;
+			max-rpm = /bits/ 16 <5500>;
+		};
+	};
 };
 
 &i2c2 {
@@ -886,7 +858,51 @@
 	status = "disabled";
 	pinctrl-names="default";
 	pinctrl-0=<&i2c3_master_pins2>; /* GPIOA_14,GPIOA_15 */
-	clock-frequency = <100000>; /* default 100k */
+	clock-frequency = <400000>; /* default 100k */
+
+	touchscreen@5d {
+		compatible = "goodix,gt9xx";
+		status = "okay";
+		reg = <0x5d>;
+		reset-gpio = <&gpio GPIOA_6 GPIO_ACTIVE_HIGH>;
+		irq-gpio = <&gpio GPIOA_5 GPIO_ACTIVE_HIGH>;
+		rotation = <4>; /* sf_rotation 0 */
+		//rotation = <0>; /* sf_rotation 90*/
+		//rotation = <5>; /* sf_rotation 180 */
+		//rotation = <3>; /* sf_rotation 270 */
+
+		/*800x1280, RXT101 panel*/
+		goodix,cfg-group0 = [
+			46 00 05 20 03 05 3D 00 01 0F 1E 0F 50 32 03
+			05 00 00 00 00 00 00 04 18 1A 1E 14 8E 2E 88
+			2C 2A B5 06 00 00 00 22 02 24 00 00 00 00 00
+			00 00 00 00 00 00 0F 46 94 C5 02 07 00 00 04
+			FF 11 00 CA 18 00 9E 20 00 7B 2C 00 63 3C 00
+			63 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 15 14 11 10 0F 0E 0D 0C
+			09 08 07 06 05 04 01 00 FF FF FF FF FF FF FF
+			FF 00 00 00 00 00 00 00 02 04 06 07 08 0A 0C
+			0D 0F 10 11 12 13 19 1B 1C 1E 1F 20 21 22 23
+			24 25 26 27 28 FF FF FF FF 00 00 00 00 00 00
+			00 00 00 00 70 01 ];
+
+		/*1200x1920, AML101 panel*/
+		goodix,cfg-group1 = [
+                        00 80 07 B0 04 0A 3C 00 01 0A 28 1F 55 32 03
+			05 00 00 00 00 00 00 00 18 1A 1E 14 90 2F AA
+			1E 20 31 0D 00 00 00 22 03 1D 00 00 00 00 00
+			00 00 00 00 00 00 14 2D 94 D5 02 08 00 00 04
+			9A 15 00 8C 19 00 80 1E 00 77 23 00 70 29 00
+			70 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 01 04 05 06 07 08 09
+			0C 0D 0E 0F 10 11 14 15 16 17 18 19 00 00 00
+			00 00 00 00 00 00 00 29 28 27 26 25 24 23 22
+			21 20 1F 1E 1C 1B 19 14 13 12 11 10 0F 0E 0D
+			0C 0A 08 07 06 04 02 00 FF 00 00 00 00 00 00
+			00 00 00 00 12 01 ];
+	};
 };
 
 &audiobus {
@@ -1115,11 +1131,19 @@
 		};
 	};
 	
-	bl_pwm_off_pins:bl_pwm_off_pin {
+	bl_pwm_off_pins: bl_pwm_off_pin {
 		mux {
 			pins = "GPIOA_11";
 			function = "gpio_periphs";
-			output-high;
+			output-low;
+		};
+	};
+
+	a_uart_2_pins: a_uart_2_pins {
+		mux { /* GPIOX_12, GPIOX_13 */
+			groups = "uart_tx_a",
+				"uart_rx_a";
+			function = "uart_a";
 		};
 	};
 }; /* end of pinctrl_periphs */
@@ -1145,7 +1169,7 @@
 /*if you want to use vdin just modify status to "ok"*/
 &vdin0 {
 	memory-region = <&vdin0_cma_reserved>;
-	status = "disabled";
+	status = "okay";
 	/*vdin write mem color depth support:
 	 *bit0:support 8bit
 	 *bit1:support 9bit
@@ -1158,7 +1182,7 @@
 
 &vdin1 {
 	memory-region = <&vdin1_cma_reserved>;
-	status = "disabled";
+	status = "okay";
 	/*vdin write mem color depth support:
 	 *bit0:support 8bit
 	 *bit1:support 9bit
@@ -1215,7 +1239,7 @@
 };
 
 &sd_emmc_a {
-	status = "disabled";
+	status = "okay";
 	sdio {
 		caps = "MMC_CAP_4_BIT_DATA",
 			 "MMC_CAP_MMC_HIGHSPEED",
@@ -1265,7 +1289,7 @@
 };
 
 &uart_A {
-	status = "disabled";
+	status = "okay";
 };
 
 &pcie_A {
@@ -1275,14 +1299,6 @@
 
 &saradc {
 	status = "okay";
-};
-
-&spicc0 {
-        status = "disabled";
-        pinctrl-names = "default";
-        pinctrl-0 = <&spicc0_pins_x>;
-        num_chipselect = <1>;
-        cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
 };
 
 &remote {
@@ -1334,5 +1350,17 @@
 };
 
 &irblaster {
-	status = "disable";
+	status = "disabled";
+};
+
+&spicc0 {
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spicc0_pins_x>;
+	num_chipselect = <1>;
+	cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
+};
+
+&vrtc {
+	status = "disabled";
 };

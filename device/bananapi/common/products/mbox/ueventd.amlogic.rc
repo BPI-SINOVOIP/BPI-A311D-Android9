@@ -73,6 +73,12 @@
 /dev/ptya1                0660   system     system
 /dev/ttyHS2               0666   bluetooth  bluetooth
 /dev/ttyS20               0664   system     system
+# quectel ec20/ec25
+/dev/ttyUSB*              0660   radio        radio
+/dev/ttyACM*              0660   radio        radio
+/dev/cdc-wdm*             0660   radio        radio
+/dev/qcqmi*             0660   radio        radio
+/dev/cdc-acm*             0660   radio        radio
 
 #For invensense`s sensors
 /dev/mpu                  0666   system     system

@@ -1720,7 +1720,7 @@
 					cooling-device = <&cpufreq_cool1 0 9>;
 					contribution = <1024>;
 				};
-				cpucore_cooling_map0 {
+				cpucore_cooling_map {
 					trip = <&pcontrol>;
 					cooling-device = <&cpucore_cool 0 5>;
 					contribution = <1024>;

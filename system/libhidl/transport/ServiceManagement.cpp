@@ -669,6 +669,18 @@ sp<::android::hidl::base::V1_0::IBase> getRawServiceInternal(const std::string& 
     using ::android::hidl::manager::V1_0::IServiceManager;
     sp<Waiter> waiter;
 
+#if 1 //add by quectel, fix noisy radio hidl related warning logs when no hardware connected.
+    if((access("dev/cdc-wdm0",F_OK))!=-1){
+        ALOGD("dev file  dev/cdc-wdm0 exist.");
+    } else{
+        if(strcmp(descriptor.c_str(),"android.hardware.radio@1.1::IRadio") == 0 || strcmp(descriptor.c_str(),"android.hardware.radio@1.0::IRadio") == 0 || \
+           strcmp(descriptor.c_str(),"android.hardware.radio.deprecated@1.0::IOemHook")== 0) {
+            ALOGD("dev file  dev/cdc-wdm0 is not exist.");
+            return nullptr;
+        }
+    }
+#endif
+
     const sp<IServiceManager1_1> sm = defaultServiceManager1_1();
     if (sm == nullptr) {
         ALOGE("getService: defaultServiceManager() is null");

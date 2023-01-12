@@ -50,6 +50,20 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+       android:key="mobile_network_category"
+       android:title="@string/network_category_title"
+       android:layout="@layout/preference_category_compact_layout" >
+       <Preference
+            android:key="mobile_network_settings"
+            android:title="@string/network_settings_title" >
+            <intent
+                android:action="android.intent.action.MAIN"
+                android:targetClass="com.android.phone.MobileNetworkSettings"
+                android:targetPackage="com.android.phone" />
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="ethernet"
         android:title="@string/connectivity_ethernet"
         android:layout="@layout/preference_category_compact_layout" >

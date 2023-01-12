@@ -142,7 +142,7 @@
 		vdin0_cma_reserved:linux,vdin0_cma {
 			compatible = "shared-dma-pool";
 			reusable;
-		/* 1920x1080x2x4  =16+4 M */
+			/* 1920x1080x2x4  =16+4 M */
 			size = <0x0 0x04000000>;
 			alignment = <0x0 0x400000>;
 		};
@@ -769,6 +769,11 @@
 
 &soc_thermal {
 	trips {
+		pcontrol: trip-point@1 {
+			temperature = <75000>;
+			hysteresis = <5000>;
+			type = "passive";
+		};
 		fan_0: trip-point@4 {
 			temperature = <55000>;
 			hysteresis = <5000>;
@@ -786,8 +791,20 @@
 		};
 	};
 	cooling-maps {
-		cpucore_cooling_map0 {
+		cpufreq_cooling_map0 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool0 0 7>;
+			contribution = <1024>;
+		};
+		cpufreq_cooling_map1 {
+			trip = <&pcontrol>;
+			cooling-device = <&cpufreq_cool1 0 7>;
+			contribution = <1024>;
+		};
+		cpucore_cooling_map {
 			trip = <&phot>;
+			cooling-device = <&cpucore_cool 2 5>;
+			contribution = <1024>;
 		};
 		fan_cooling_map0 {
 			trip = <&fan_0>;
@@ -1311,6 +1328,14 @@
 	status = "okay";
 };
 
+&spicc0 {
+        status = "disabled";
+        pinctrl-names = "default";
+        pinctrl-0 = <&spicc0_pins_x>;
+        num_chipselect = <1>;
+        cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
+};
+
 &remote {
 	status = "disabled";
 };
@@ -1361,12 +1386,4 @@
 
 &irblaster {
 	status = "disabled";
-};
-
-&spicc0 {
-	status = "disabled";
-	pinctrl-names = "default";
-	pinctrl-0 = <&spicc0_pins_x>;
-	num_chipselect = <1>;
-	cs-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_LOW>;
 };
