@@ -511,24 +511,28 @@ on property:sys.boot_completed=1
 
 service dhclient_eth0 /system/bin/dhclient -6 -nw -d eth0
     class main
+    capabilities NET_ADMIN NET_RAW
     disabled
     oneshot
 	seclabel u:object_r:dhclient_exec:s0
 
 service release6_eth0 /system/bin/dhclient -6 -r eth0
     class main
+    capabilities NET_ADMIN NET_RAW
     disabled
     oneshot
 	seclabel u:object_r:dhclient_exec:s0
 
 service dhclient_wlan0 /system/bin/dhclient -6 -nw -d wlan0
     class main
+    capabilities NET_ADMIN NET_RAW
     disabled
     oneshot
 	seclabel u:object_r:dhclient_exec:s0
 
 service release6_wlan0 /system/bin/dhclient -6 -r wlan0
     class main
+    capabilities NET_ADMIN NET_RAW
     disabled
     oneshot
 	seclabel u:object_r:dhclient_exec:s0

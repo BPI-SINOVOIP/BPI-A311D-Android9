@@ -574,7 +574,7 @@ int32_t acamera_interrupt_handler()
                 // process interrupts
                 if ( irq_bit == ISP_INTERRUPT_EVENT_ISP_START_FRAME_START ) {
                     if ( g_firmware.dma_flag_isp_metering_completed == 0 || g_firmware.dma_flag_isp_config_completed == 0 ) {
-                        LOG( LOG_CRIT, "DMA is not finished, cfg: %d, meter: %d, skip this frame.", g_firmware.dma_flag_isp_config_completed, g_firmware.dma_flag_isp_metering_completed );
+                        //LOG( LOG_CRIT, "DMA is not finished, cfg: %d, meter: %d, skip this frame.", g_firmware.dma_flag_isp_config_completed, g_firmware.dma_flag_isp_metering_completed );
                         return -2;
                     }
                     not_empty = acamera_event_queue_not_empty( &p_ctx->fsm_mgr.event_queue );

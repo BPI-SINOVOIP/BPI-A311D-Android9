@@ -1326,6 +1326,10 @@
 	mc_val = <0x1621>;
 	internal_phy=<0>;
 
+	cali_val = <0x60000>;
+	rx_delay = <1>;
+	auto_cali_idx = <0>;
+
 	/* reset */
 	rst_pin-gpios = <&gpio GPIOZ_15 GPIO_ACTIVE_LOW>;
 };
