@@ -23,6 +23,8 @@ Get source code
 
 Because github limit 100MB size for single file, please download the [oversize files](https://download.banana-pi.dev/d/ca025d76afd448aabc63/files/?p=%2FSource_Code%2Fm2s%2Fgithub_oversize_files.zip) and merge them to correct directory before build.
 
+Another way is get the source code tar archive from [BaiduPan(pincode: 8888)](https://pan.baidu.com/s/1rANGEB-1MLPCBXqOR5aYCg?pwd=8888) or [GoogleDrive](https://drive.google.com/drive/folders/1INIABp_MbB5UcwfqujTngGLOZN7YGuWp?usp=share_link GoogleDrive)
+
 ----------
 
 **Build**
