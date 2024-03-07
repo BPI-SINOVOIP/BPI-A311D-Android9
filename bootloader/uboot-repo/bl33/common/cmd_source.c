@@ -156,12 +156,7 @@ source (ulong addr, const char *fit_uname)
 #endif
 	default:
 #if defined(CONFIG_LOAD_LINUX)
-#if defined(CONFIG_BANANAPI_M2S_V1)
-		/* fix cm4 linux bootscript load */
-		size = check_linux_boot_script(addr, getenv("board"));
-#else
 		size = check_linux_boot_script(addr, CONFIG_DEVICE_PRODUCT);
-#endif
 		if (size > 0) {
 			data = (u32*)(addr + size);
 			len = simple_strtoul(getenv("filesize"), NULL, 16) - size;

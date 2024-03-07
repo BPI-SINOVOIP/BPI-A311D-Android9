@@ -636,7 +636,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
-#define CONFIG_DEVICE_PRODUCT	"bananapi_m2s"
+#define CONFIG_DEVICE_PRODUCT	"bananapi"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
