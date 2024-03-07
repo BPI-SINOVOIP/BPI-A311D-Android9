@@ -932,10 +932,10 @@ int checkhw(char * name)
 			case BOARD_A311D_CM4:
 				if (get_cm4io_board_type() == BOARD_CM4IO_BPI) {
 					strcpy(loc_name, "bananapi_cm4_a311d\0");
-					setenv("fdtfile", "bananapi_cm4.dtb");
+					setenv("fdtfile", "bananapi_cm4io.dtb");
 				} else if (get_cm4io_board_type() == BOARD_CM4IO_RPI) {
 					strcpy(loc_name, "bananapi_rpicm4_a311d\0");
-					setenv("fdtfile", "bananapi_cm4_rpi.dtb");
+					setenv("fdtfile", "raspberrypi_cm4io.dtb");
 				}
 				break;
 			default:
