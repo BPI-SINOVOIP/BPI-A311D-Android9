@@ -430,6 +430,7 @@ public class ScreenResolutionFragment extends LeanbackPreferenceFragment impleme
                 if (mAlertDialog != null) {
                     mAlertDialog.dismiss();
                 }
+                mOutputUiManager.reboot();
                 break;
         }
         task.cancel();

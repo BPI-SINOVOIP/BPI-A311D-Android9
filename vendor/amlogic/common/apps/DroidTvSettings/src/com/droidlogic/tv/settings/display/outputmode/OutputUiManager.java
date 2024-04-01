@@ -19,6 +19,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.Build;
+import android.os.ServiceManager;
+import android.os.PowerManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -227,10 +229,14 @@ public class OutputUiManager {
     private static String tvSupportDolbyVisionMode;
     private static String tvSupportDolbyVisionType;
 
+    private PowerManager mPowerManager;
+
     public OutputUiManager(Context context){
         mContext = context;
         mOutputModeManager = new OutputModeManager(mContext);
         mDolbyVisionSettingManager = new DolbyVisionSettingManager(mContext);
+
+        mPowerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
         mUiMode = getUiMode();
         initModeValues(mUiMode);
@@ -591,5 +597,10 @@ public class OutputUiManager {
                 || (!getCurrentColorAttribute().equals("444,8bit"))) {
             changeColorAttribte("444,8bit");
         }
+    }
+
+    public void reboot() {
+        String reason = PowerManager.REBOOT_REQUESTED_BY_DEVICE_OWNER;
+        mPowerManager.reboot(reason);
     }
 }
