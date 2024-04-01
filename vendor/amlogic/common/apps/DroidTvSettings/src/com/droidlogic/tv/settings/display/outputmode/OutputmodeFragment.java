@@ -46,6 +46,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.ServiceManager;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
@@ -101,6 +103,10 @@ public class OutputmodeFragment extends LeanbackPreferenceFragment implements On
         mOutputUiManager = new OutputUiManager(getActivity());
         mIntentFilter = new IntentFilter("android.intent.action.HDMI_PLUGGED");
         mIntentFilter.addAction(Intent.ACTION_TIME_TICK);
+
+        //may be add a preference
+        mOutputUiManager.setShowAll(true);
+
         updatePreferenceFragment();
     }
     private ArrayList<Action> getMainActions() {
@@ -160,7 +166,6 @@ public class OutputmodeFragment extends LeanbackPreferenceFragment implements On
                 preMode = mOutputUiManager.getCurrentMode().trim();
                 curMode = radioPreference.getKey();
                 curPreference = radioPreference;
-                mOutputUiManager.change2NewMode(curMode);
                 showDialog();
                 curPreference.setChecked(true);
             } else {
@@ -225,11 +230,20 @@ public class OutputmodeFragment extends LeanbackPreferenceFragment implements On
                 if (mAlertDialog != null) {
                     mAlertDialog.dismiss();
                     prePreference = curPreference;
+					mOutputUiManager.change2NewMode(curMode);
+                    reboot();
                 }
                 break;
         }
         task.cancel();
     }
+
+    private void reboot() {
+        PowerManager pm = (PowerManager) getActivity().getSystemService(Context.POWER_SERVICE);
+        String reason = PowerManager.REBOOT_REQUESTED_BY_DEVICE_OWNER;
+        pm.reboot(reason);
+    }
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {

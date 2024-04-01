@@ -69,9 +69,11 @@ public class OutputUiManager {
         "1080i60hz",
         "1080i50hz",
         "576p50hz",
+        "480p60hz",
         "576i50hz",
         "480i60hz",
-        "2560x1080p60hz",
+        "3440x1440p60hz",
+        "2560x1600p60hz",
         "2560x1440p60hz",
         "2560x1080p60hz",
         "1920x1200p60hz",
@@ -105,9 +107,11 @@ public class OutputUiManager {
         "1080i-60hz",
         "1080i-50hz",
         "576p-50hz",
+        "480p-60hz",
         "576i-50hz",
         "480i-60hz",
-        "2560x1080p60hz",
+        "3440x1440p60hz",
+        "2560x1600p60hz",
         "2560x1440p60hz",
         "2560x1080p60hz",
         "1920x1200p60hz",
@@ -203,6 +207,7 @@ public class OutputUiManager {
     private static final int DEFAULT_CVBS_MODE = 1;
     private static String[] mHdmiValueList;
     private static String[] mHdmiTitleList;
+	private static boolean showAll = false;
 
     private static String[] mHdmiColorValueList;
     private static String[] mHdmiColorTitleList;
@@ -430,6 +435,10 @@ public class OutputUiManager {
         return mValueList;
     }
 
+    public void setShowAll(Boolean value) {
+        showAll = value;
+    }
+
     public void  filterOutputMode() {
         List<String> listValue = new ArrayList<String>();
         List<String> listTitle = new ArrayList<String>();
@@ -466,7 +475,7 @@ public class OutputUiManager {
         } else {
             Edid = strEdid;
         }
-        if (Edid != null && Edid.length() != 0 && !Edid.contains("null")) {
+        if (!showAll && Edid != null && Edid.length() != 0 && !Edid.contains("null")) {
             List<String> listHdmiMode = new ArrayList<String>();
             List<String> listHdmiTitle = new ArrayList<String>();
             for (int i = 0; i < listValue.size(); i++) {

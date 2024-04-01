@@ -578,7 +578,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.primary_display_orientation=90
 else
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sf.lcd_density=213 \
+    ro.sf.lcd_density=160 \
     ro.sf.primary_display_orientation=0
 endif
 

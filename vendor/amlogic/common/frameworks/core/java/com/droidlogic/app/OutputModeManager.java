@@ -42,7 +42,7 @@ import android.content.ContentResolver;
 
 public class OutputModeManager {
     private static final String TAG                         = "OutputModeManager";
-    private static final boolean DEBUG                      = false;
+    private static final boolean DEBUG                      = true;
 
     /**
      * The saved value for Outputmode auto-detection.

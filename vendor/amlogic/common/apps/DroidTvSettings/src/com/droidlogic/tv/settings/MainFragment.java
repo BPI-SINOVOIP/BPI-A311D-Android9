@@ -178,7 +178,8 @@ public class MainFragment extends LeanbackPreferenceFragment {
                 DroidUtils.store(getActivity(), DroidUtils.KEY_HIDE_STARTUP, DroidUtils.VALUE_SHOW_STARTUP);
             }
         } else {
-            picturePref.setVisible(!SettingsConstant.needDroidlogicTvFeature(getContext()));
+            picturePref.setVisible(false);
+            keyStone.setVisible(false);
             mTvOption.setVisible(SettingsConstant.needDroidlogicTvFeature(getContext()));
             mSoundsPref.setVisible(false);
             channelPref.setVisible(false);
