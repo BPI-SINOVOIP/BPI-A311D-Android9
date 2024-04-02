@@ -542,7 +542,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
 #
 #########################################################################
 PRODUCT_PACKAGES += \
-    Launcher3
+    Launcher3QuickStep \
+    Settings \
+    SettingsIntelligence
 
 #Add Simple setupwizard to set Settings.Secure.USER_SETUP=1 for notice that user setup complete
 PRODUCT_PACKAGES += \

@@ -49,4 +49,8 @@
             android:key="dolby_vision"
             android:title="@string/dolby_vision_tv"
             android:fragment="com.droidlogic.tv.settings.display.dolbyvision.DolbyVisionSettingFragment"/>
+        <Preference
+            android:fragment="com.droidlogic.tv.settings.PanelOutputFragment"
+            android:key="panel_output"
+            android:title="@string/panel_output" />
 </PreferenceScreen>

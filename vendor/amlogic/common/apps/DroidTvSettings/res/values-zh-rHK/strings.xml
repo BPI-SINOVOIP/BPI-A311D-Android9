@@ -12,7 +12,7 @@
     <string name="system_more_setting">"更多設定"</string>
     <string name="upgrade_bluetooth_remote">"藍牙遙控升級"</string>
     <string name="device_display">"顯示"</string>
-    <string name="device_outputmode">"屏幕分辨率"</string>
+    <string name="device_outputmode">"HDMI 分辨率"</string>
     <string name="device_color">"色彩"</string>
     <string name="device_colorattribute">"格式和色深"</string>
     <string name="device_outputmode_color_space">"色彩空間設定"</string>
