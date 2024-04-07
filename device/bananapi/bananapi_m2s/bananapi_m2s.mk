@@ -598,10 +598,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
 ifeq ($(BPI_FACTORY_TEST), true)
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=160 \
-    ro.sf.primary_display_orientation=90
+    ro.sf.primary_display_orientation=90 \
+    ro.sf.primary_tp_orientation=90
 else
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sf.lcd_density=213 \
-    ro.sf.primary_display_orientation=0
+    ro.sf.lcd_density=213
 endif
+
+#PRODUCT_PROPERTY_OVERRIDES += \
+#    ro.sf.primary_tp_orientation=90
 
