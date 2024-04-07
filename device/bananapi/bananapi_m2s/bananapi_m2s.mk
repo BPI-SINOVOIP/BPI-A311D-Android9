@@ -551,6 +551,27 @@ PRODUCT_PACKAGES += \
     Provision
 #########################################################################
 #
+#                            opengapps
+#
+#########################################################################
+BOARD_BUILD_OPENGAPPS := false
+
+ifeq ($(BOARD_BUILD_OPENGAPPS), true)
+GAPPS_VARIANT := pico
+GAPPS_PRODUCT_PACKAGES += Chrome
+GAPPS_EXCLUDED_PACKAGES := SetupWizard
+
+# opengapps, github.com/opengapps/aosp_build
+$(call inherit-product-if-exists, vendor/opengapps/build/opengapps-packages.mk)
+
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+	ro.build.fingerprint=google/bonito/bonito:9/PQ3B.190801.002/5674421:user/release-keys
+
+#PRODUCT_BROKEN_VERIFY_USES_LIBRARIES := true
+#DONT_DEXPREOPT_PREBUILTS := true
+endif
+#########################################################################
+#
 #                            factory test
 #
 #########################################################################
