@@ -157,6 +157,7 @@ static const char *hdmi_support_modes[] = {
 	"1280x1024p60hz",
 	"1360x768p60hz",
 	"1440x900p60hz",
+	"1440x2560p60hz",
 	"1600x900p60hz",
 	"1600x1200p60hz",
 	"1680x1050p60hz",
@@ -2182,11 +2183,17 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 	if (refresh > 60)
 		refresh = 60;
 
+	/* 1440x2560p50hz */
+	if (width == 1440 && height == 2560 && refresh < 60)
+		refresh = 60;
+
 	/* YCbCr 4:2:0 */
 	if ((extended_tag == 0xf) && (width == 3840))
 		sprintf(bestmode, "%s%dhz420", temp, refresh);
 	else
 		sprintf(bestmode, "%s%dhz", temp, refresh);
+
+	printf("BPI: bestmode is %s\n", bestmode);
 
 	/* search on available support hdmi modes */
 	for (i = 0; i < ARRAY_SIZE(hdmi_support_modes); i++) {

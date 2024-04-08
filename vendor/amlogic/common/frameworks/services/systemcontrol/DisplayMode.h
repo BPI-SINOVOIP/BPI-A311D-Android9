@@ -322,6 +322,8 @@ using namespace android;
 #define FULL_HEIGHT_1360x768            768
 #define FULL_WIDTH_1440x900             1440
 #define FULL_HEIGHT_1440x900            900
+#define FULL_WIDTH_1440x2560            1440
+#define FULL_HEIGHT_1440x2560           2560
 #define FULL_WIDTH_1600x900             1600
 #define FULL_HEIGHT_1600x900            900
 #define FULL_WIDTH_1600x1200            1600
@@ -395,6 +397,7 @@ enum {
 #define MODE_1280x1024P                 "1280x1024p60hz"
 #define MODE_1360x768P                  "1360x768p60hz"
 #define MODE_1440x900P                  "1440x900p60hz"
+#define MODE_1440x2560P                 "1440x2560p60hz"
 #define MODE_1600x900P                  "1600x900p60hz"
 #define MODE_1600x1200P                 "1600x1200p60hz"
 #define MODE_1680x1050P                 "1680x1050p60hz"
@@ -426,6 +429,7 @@ enum {
 #define MODE_1280x1024P_PREFIX          "1280x1024p"
 #define MODE_1360x768P_PREFIX           "1360x768p"
 #define MODE_1440x900P_PREFIX           "1440x900p"
+#define MODE_1440x2560P_PREFIX          "1440x2560p"
 #define MODE_1600x900P_PREFIX           "1600x900p"
 #define MODE_1600x1200P_PREFIX          "1600x1200p"
 #define MODE_1680x1050P_PREFIX          "1680x1050p"
@@ -485,15 +489,16 @@ enum {
     DISPLAY_MODE_1280x1024P             = 35,
     DISPLAY_MODE_1360x768P              = 36,
     DISPLAY_MODE_1440x900P              = 37,
-    DISPLAY_MODE_1600x900P              = 38,
-    DISPLAY_MODE_1600x1200P             = 39,
-    DISPLAY_MODE_1680x1050P             = 40,
-    DISPLAY_MODE_1920x1200P             = 41,
-    DISPLAY_MODE_2560x1080P             = 42,
-    DISPLAY_MODE_2560x1440P             = 43,
-    DISPLAY_MODE_2560x1600P             = 44,
-    DISPLAY_MODE_3440x1440P             = 45,
-    DISPLAY_MODE_TOTAL                  = 46
+    DISPLAY_MODE_1440x2560P             = 38,
+    DISPLAY_MODE_1600x900P              = 39,
+    DISPLAY_MODE_1600x1200P             = 40,
+    DISPLAY_MODE_1680x1050P             = 41,
+    DISPLAY_MODE_1920x1200P             = 42,
+    DISPLAY_MODE_2560x1080P             = 43,
+    DISPLAY_MODE_2560x1440P             = 44,
+    DISPLAY_MODE_2560x1600P             = 45,
+    DISPLAY_MODE_3440x1440P             = 46,
+    DISPLAY_MODE_TOTAL                  = 47
 };
 
 typedef enum {

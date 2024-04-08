@@ -868,6 +868,7 @@ unsigned int hdmi_edid_parsing(unsigned char *EDID_buf, struct rx_cap *pRXCap)
 			case HDMIV_1280x1024p60hz:
 			case HDMIV_1360x768p60hz:
 			case HDMIV_1440x900p60hz:
+			case HDMIV_1440x2560p60hz:
 			case HDMIV_1600x900p60hz:
 			case HDMIV_1600x1200p60hz:
 			case HDMIV_1680x1050p60hz:

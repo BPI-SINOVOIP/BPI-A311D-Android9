@@ -4366,6 +4366,11 @@ static int osd_probe(struct platform_device *pdev)
 						var_screeninfo[1] = 900;
 						var_screeninfo[2] = 1440;
 						var_screeninfo[3] = 1800;
+					} else if(strncmp(hdmimode_propname, "1440x2560p60hz", 14) == 0) {
+						var_screeninfo[0] = 1440;
+						var_screeninfo[1] = 2560;
+						var_screeninfo[2] = 1440;
+						var_screeninfo[3] = 5120;
 					} else if(strncmp(hdmimode_propname, "640x480p60hz", 12) == 0) {
 						var_screeninfo[0] = 640;
 						var_screeninfo[1] = 480;

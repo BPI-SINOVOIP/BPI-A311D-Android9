@@ -86,6 +86,7 @@ static const char* DISPLAY_MODE_LIST[DISPLAY_MODE_TOTAL] = {
     MODE_1280x1024P,
     MODE_1360x768P,
     MODE_1440x900P,
+    MODE_1440x2560P,
     MODE_1600x900P,
     MODE_1600x1200P,
     MODE_1680x1050P,
@@ -153,6 +154,7 @@ static const char* MODES_SINK[] = {
     "1280x1024p60hz",
     "1360x768p60hz",
     "1440x900p60hz",
+    "1440x2560p60hz",
     "1600x900p60hz",
     "1600x1200p60hz",
     "1680x1050p60hz",
@@ -185,6 +187,7 @@ static const char* MODES_REPEATER[] = {
     "1280x1024p60hz",
     "1360x768p60hz",
     "1440x900p60hz",
+    "1440x2560p60hz",
     "1600x900p60hz",
     "1600x1200p60hz",
     "1680x1050p60hz",
@@ -1024,6 +1027,7 @@ void DisplayMode::getHighestHdmiMode(char* mode, hdmi_data_t* data) {
         case DISPLAY_MODE_1280x1024P:
         case DISPLAY_MODE_1360x768P:
         case DISPLAY_MODE_1440x900P:
+        case DISPLAY_MODE_1440x2560P:
         case DISPLAY_MODE_1600x900P:
         case DISPLAY_MODE_1600x1200P:
         case DISPLAY_MODE_1680x1050P:
@@ -1443,6 +1447,9 @@ void DisplayMode::updateDefaultUI() {
     } else if (!strncmp(mDefaultUI, "1440x900", 8)) {
         mDisplayWidth = 1440;
         mDisplayHeight = 900;
+    } else if (!strncmp(mDefaultUI, "1440x2560", 9)) {
+        mDisplayWidth = 1440;
+        mDisplayHeight = 2560;
     } else if (!strncmp(mDefaultUI, "1280x1024", 9)) {
         mDisplayWidth = 1280;
         mDisplayHeight = 1024;
@@ -1661,6 +1668,10 @@ void DisplayMode::getPosition(const char* curMode, int *position) {
         strcpy(keyValue, MODE_1440x900P_PREFIX);
         defaultWidth = FULL_WIDTH_1440x900;
         defaultHeight = FULL_HEIGHT_1440x900;
+    } else if (strstr(curMode, MODE_1440x2560P_PREFIX)) {
+        strcpy(keyValue, MODE_1440x2560P_PREFIX);
+        defaultWidth = FULL_WIDTH_1440x2560;
+        defaultHeight = FULL_HEIGHT_1440x2560;
     } else if (strstr(curMode, MODE_1600x900P_PREFIX)) {
         strcpy(keyValue, MODE_1600x900P_PREFIX);
         defaultWidth = FULL_WIDTH_1600x900;
@@ -1823,6 +1834,8 @@ void DisplayMode::setPosition(int left, int top, int width, int height) {
         strcpy(keyValue, MODE_1360x768P_PREFIX);
     } else if (strstr(curMode, MODE_1440x900P_PREFIX)) {
         strcpy(keyValue, MODE_1440x900P_PREFIX);
+    } else if (strstr(curMode, MODE_1440x2560P_PREFIX)) {
+        strcpy(keyValue, MODE_1440x2560P_PREFIX);
     } else if (strstr(curMode, MODE_1600x900P_PREFIX)) {
         strcpy(keyValue, MODE_1600x900P_PREFIX);
     } else if (strstr(curMode, MODE_1600x1200P_PREFIX)) {
