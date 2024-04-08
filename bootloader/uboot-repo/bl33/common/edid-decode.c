@@ -2179,6 +2179,9 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 	else
 		strcat(temp, "i");
 
+	if (refresh > 60)
+		refresh = 60;
+
 	/* YCbCr 4:2:0 */
 	if ((extended_tag == 0xf) && (width == 3840))
 		sprintf(bestmode, "%s%dhz420", temp, refresh);
