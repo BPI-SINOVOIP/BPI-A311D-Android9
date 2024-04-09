@@ -558,7 +558,6 @@ void DisplayMode::setSourceDisplay(output_mode_state state) {
         pSysWrite->writeSysfs(H265_DOUBLE_WRITE_MODE, "0");
     }
 
-#if 1
     //bpi, set default outputmode from ubootenv, 
     char value[64];
     char cvbs_buf[64];
@@ -576,12 +575,8 @@ void DisplayMode::setSourceDisplay(output_mode_state state) {
     }
     strcpy(outputmode, value);
     strcpy(mDefaultUI, value);
-#else
-    strcpy(outputmode, "800x480p60hz");
-    strcpy(mDefaultUI, "800x480p60hz");
-#endif
 
-    SYS_LOGE("display sink type:%d [0:none, 1:sink, 2:repeater], old outputmode:%s, new outputmode:%s\n",
+    SYS_LOGI("display sink type:%d [0:none, 1:sink, 2:repeater], old outputmode:%s, new outputmode:%s\n",
             data.sinkType,
             data.current_mode,
             outputmode);

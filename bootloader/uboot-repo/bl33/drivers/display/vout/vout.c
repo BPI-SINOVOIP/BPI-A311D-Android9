@@ -810,6 +810,11 @@ static int get_window_axis(int *axis)
         axis[1] = getenv_int("1440x900p_y", def_y);
         axis[2] = getenv_int("1440x900p_w", def_w);
         axis[3] = getenv_int("1440x900p_h", def_h);
+    } else if (strncmp(mode, "1440x2560p",10) == 0) {
+        axis[0] = getenv_int("1440x2560p_x", def_x);
+        axis[1] = getenv_int("1440x2560p_y", def_y);
+        axis[2] = getenv_int("1440x2560p_w", def_w);
+        axis[3] = getenv_int("1440x2560p_h", def_h);
     } else if (strncmp(mode, "1600x900p",9) == 0) {
         axis[0] = getenv_int("1600x900p_x", def_x);
         axis[1] = getenv_int("1600x900p_y", def_y);
