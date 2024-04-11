@@ -65,7 +65,9 @@
 static __u32 var_screeninfo[5];
 static struct osd_device_data_s osd_meson_dev;
 char hdmimode_propname[20] = "null";
+char hdmichecksum_propname[20] = "null";
 char nativeui_propname[20] = "null";
+int recovery_flag;
 
 #define MAX_VPU_CLKC_CLK 500000000
 #define CUR_VPU_CLKC_CLK 200000000
@@ -4150,13 +4152,62 @@ static const struct of_device_id meson_fb_dt_match[] = {
 	{},
 };
 
+static void fb_def_var_set(int index)
+{
+
+	osd_log_info("fb_def_var_set \n");
+
+	fb_def_var[index].xres = var_screeninfo[0];
+	fb_def_var[index].yres = var_screeninfo[1];
+	fb_def_var[index].xres_virtual = var_screeninfo[2];
+	fb_def_var[index].yres_virtual = var_screeninfo[3];
+	fb_def_var[index].bits_per_pixel = var_screeninfo[4];
+
+	osd_log_info("init fbdev bpp is:%d\n", fb_def_var[index].bits_per_pixel);
+	if (fb_def_var[index].bits_per_pixel > 32)
+		fb_def_var[index].bits_per_pixel = 32;
+
+}
+
+static void fb_def_var_set_spec(int index,int xres,int yres,int xres_virtual,int yres_virtual,int bits_per_pixel)
+{
+
+	osd_log_info("fb_def_var_set_spec \n");
+
+	fb_def_var[index].xres = xres;
+	fb_def_var[index].yres = yres;
+	fb_def_var[index].xres_virtual = xres_virtual;
+	fb_def_var[index].yres_virtual = yres_virtual;
+	fb_def_var[index].bits_per_pixel = bits_per_pixel;
+
+	osd_log_info("init fbdev bpp is:%d\n", fb_def_var[index].bits_per_pixel);
+	if (fb_def_var[index].bits_per_pixel > 32)
+		fb_def_var[index].bits_per_pixel = 32;
+}
+
+static void fb_var_set_process(int index)
+{
+	int width, height;
+
+	osd_log_info(" fb_var_set_process \n");
+
+	if(recovery_flag != 1) {
+		osd_log_info("not recovery mode set \n");
+		fb_def_var_set(index);
+	} else if(recovery_flag == 1 && strncmp(hdmichecksum_propname, "0x00000000", 10) != 0) {
+		(var_screeninfo[0] > 1920) ? (width = 1920) : (width = var_screeninfo[0]);
+		(var_screeninfo[1] > 1080) ? (height = 1080) : (height = var_screeninfo[1]);
+		osd_log_info("recovery mode lcd not exist hdmi insert, width=%d, height=%d\n", width, height);
+		fb_def_var_set_spec(index,width,height,width,height*2,32);
+	}
+}
 static int osd_probe(struct platform_device *pdev)
 {
 	struct fb_info *fbi = NULL;
 	const struct vinfo_s *vinfo;
 	struct fb_var_screeninfo *var;
 	struct fb_fix_screeninfo *fix;
-	int  index, bpp, cpu_type;
+	int  index, bpp;
 	struct osd_fb_dev_s *fbdev = NULL;
 	const void *prop;
 	int prop_idx = 0;
@@ -4167,6 +4218,7 @@ static int osd_probe(struct platform_device *pdev)
 	#endif
 	int i;
 	int ret = 0;
+	int cpu_type = get_cpu_type();
 
 	if (pdev->dev.of_node) {
 		const struct of_device_id *match;
@@ -4289,13 +4341,10 @@ static int osd_probe(struct platform_device *pdev)
 	/* Todo: only osd0 */
 	osd_set_free_scale_mode_hw(DEV_OSD0, prop_idx);
 	prop_idx = 0;
-	cpu_type = get_cpu_type();
-	if(strncmp(nativeui_propname, "enable", 6) == 0 && strncmp(hdmimode_propname, "2160p", 5) == 0) {
-		if (cpu_type == MESON_CPU_MAJOR_ID_G12B) {
-			prop_idx = 1;
-			osd_set_4k2k_fb_mode_hw(prop_idx);
-		}
-	}
+	prop = of_get_property(pdev->dev.of_node, "4k2k_fb", NULL);
+	if (prop)
+		prop_idx = of_read_ulong(prop, 1);
+	osd_set_4k2k_fb_mode_hw(prop_idx);
 
 	/* get default display mode from dt */
 	ret = of_property_read_string(pdev->dev.of_node,
@@ -4353,8 +4402,8 @@ static int osd_probe(struct platform_device *pdev)
 			if (ret)
 				osd_log_info("not found display_size_default\n");
 			else {
-				printk("nativeui_propname:%s \n",nativeui_propname);
-				printk("hdmimode_propname:%s \n",hdmimode_propname);
+				osd_log_info("nativeui_propname:%s \n",nativeui_propname);
+				osd_log_info("hdmimode_propname:%s \n",hdmimode_propname);
 				if(strncmp(nativeui_propname, "enable", 6) == 0) {
 					if(strncmp(hdmimode_propname, "1024x768p60hz", 13) == 0) {
 						var_screeninfo[0] = 1024;
@@ -4482,18 +4531,22 @@ static int osd_probe(struct platform_device *pdev)
 					}
 				}
 
-				fb_def_var[index].xres = var_screeninfo[0];
-				fb_def_var[index].yres = var_screeninfo[1];
-				fb_def_var[index].xres_virtual =
-					var_screeninfo[2];
-				fb_def_var[index].yres_virtual =
-					var_screeninfo[3];
-				fb_def_var[index].bits_per_pixel =
-					var_screeninfo[4];
-				osd_log_info("init fbdev bpp is:%d\n",
-					fb_def_var[index].bits_per_pixel);
-				if (fb_def_var[index].bits_per_pixel > 32)
-					fb_def_var[index].bits_per_pixel = 32;
+				if ((cpu_type == MESON_CPU_MAJOR_ID_G12B) || (cpu_type == MESON_CPU_MAJOR_ID_SM1)) {
+					fb_var_set_process(index);
+				} else {
+					fb_def_var[index].xres = var_screeninfo[0];
+					fb_def_var[index].yres = var_screeninfo[1];
+					fb_def_var[index].xres_virtual =
+						var_screeninfo[2];
+					fb_def_var[index].yres_virtual =
+						var_screeninfo[3];
+					fb_def_var[index].bits_per_pixel =
+						var_screeninfo[4];
+					osd_log_info("init fbdev bpp is:%d\n",
+						fb_def_var[index].bits_per_pixel);
+					if (fb_def_var[index].bits_per_pixel > 32)
+						fb_def_var[index].bits_per_pixel = 32;
+				}
 			}
 		}
 
@@ -4762,6 +4815,33 @@ static int __init hdmimode_setup(char *str)
 }
 
 __setup("hdmimode=", hdmimode_setup);
+
+static int __init recovery_part_setup(char *str)
+{
+       if (str != NULL){
+               recovery_flag = 1;
+               osd_log_info("recovery_part!=NULL into recovery mode\n");
+       }
+       else{
+               recovery_flag = 0;
+               osd_log_info("recovery_part==NULL into recovery mode\n");
+      }
+       return 0;
+}
+
+__setup("recovery_part=", recovery_part_setup);
+
+static int __init hdmichecksum_setup(char *str)
+{
+	if (str != NULL)
+			  sprintf(hdmichecksum_propname, "%s", str);
+
+	  osd_log_info("hdmichecksum: %s\n", hdmichecksum_propname);
+	  return 0;
+
+}
+
+__setup("hdmichecksum=", hdmichecksum_setup);
 
 static int __init nativeui_setup(char *str)
 {
