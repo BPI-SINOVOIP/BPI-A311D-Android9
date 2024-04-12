@@ -158,6 +158,7 @@ enum hdmi_vic {
 	HDMI_3840x1080p100hz,
 	HDMI_3840x540p240hz,
 	HDMI_3840x540p200hz,
+	HDMI_CUSTOMBUILT,
 
 	/*
 	 * the following vic is for those y420 mode

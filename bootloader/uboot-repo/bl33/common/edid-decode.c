@@ -2081,8 +2081,9 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 {
 	int i, j;
 	int width = 0, height = 0, refresh = 0, scanmode = 0;
-	double pclk, vfreq;
+	double pclk, hfreq, vfreq;
 	char temp[10];
+	char modeline[100];
 	bool config = false;
 
 #ifdef DEBUG_EDID
@@ -2097,24 +2098,6 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 				j = i;
 		}
 
-		if (detailed_timings[j].width > 0) {
-			width = detailed_timings[j].width;
-			height = detailed_timings[j].height;
-
-			pclk = detailed_timings[j].pclk * 1000;
-			vfreq = (double)((pclk / detailed_timings[j].htotal) / detailed_timings[j].vtotal) + 0.5;
-			refresh = (int)vfreq;
-			scanmode = detailed_timings[j].scanmode;
-
-			config = true;
-		}
-
-		/* width 1366 is not available */
-		if (detailed_timings[j].width == 1366) {
-			detailed_timings[j].width = 1360;
-			detailed_timings[j].hdisp = 1360;
-		}
-
 		/* check if 4k resolution */
 		if (detailed_timings[j].width == 3840) {
 			width = detailed_timings[j].width;
@@ -2126,8 +2109,49 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 			scanmode = detailed_timings[j].scanmode;
 
 			config = true;
+		} else {
+			width = detailed_timings[j].width;
+			height = detailed_timings[j].height;
+
+			pclk = detailed_timings[j].pclk * 1000;
+			hfreq = (pclk / detailed_timings[j].htotal);
+			vfreq = (double)((pclk / detailed_timings[j].htotal) / detailed_timings[j].vtotal) + 0.5;
+			scanmode = detailed_timings[j].scanmode;
+
+			/* build up modeline information */
+			sprintf(modeline, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+					detailed_timings[j].width, detailed_timings[j].height,
+					detailed_timings[j].pclk,
+					(int)hfreq, (int)vfreq,
+					detailed_timings[j].hdisp, detailed_timings[j].hsyncstart,
+					detailed_timings[j].hsyncend, detailed_timings[j].htotal,
+					detailed_timings[j].vdisp, detailed_timings[j].vsyncstart,
+					detailed_timings[j].vsyncend, detailed_timings[j].vtotal,
+					detailed_timings[j].hsync_flag, detailed_timings[j].vsync_flag,
+					detailed_timings[j].scanmode);
+
+			sprintf(bestmode, "custombuilt");
+			setenv("modeline", modeline);
+			printf("modeline=%s\n", modeline);
+
+			/* set up display parameters for android */
+			memset(temp, 0, sizeof(temp));
+			sprintf(temp, "%d", width);
+			setenv("customwidth", temp);
+
+			memset(temp, 0, sizeof(temp));
+			sprintf(temp, "%d", height);
+			setenv("customheight", temp);
+
+			config = true;
+			goto DONE;
 		}
 
+		/* width 1366 is not available */
+		if (detailed_timings[j].width == 1366) {
+			detailed_timings[j].width = 1360;
+			detailed_timings[j].hdisp = 1360;
+		}
 	/* 2. select the biggest width among standard timings */
 	} else if (standard_cnt) {
 		j = 0;
@@ -2200,6 +2224,8 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 		if (!strcmp(hdmi_support_modes[i], bestmode)) {
 			printf("hdmi_support_mode %s\n", hdmi_support_modes[i]);
 			goto DONE;
+		} else {
+			/* bpi, custombuilt */
 		}
 	}
 

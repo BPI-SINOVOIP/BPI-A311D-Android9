@@ -20,6 +20,7 @@
 */
 
 #include <common.h>
+#include <linux/math64.h>
 #include <amlogic/enc_clk_config.h>
 #include <asm/arch/io.h>
 #include <asm/io.h>
@@ -188,6 +189,29 @@ static void set_hpll_hclk_dongle_5940m(void)
 	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 	WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
 	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+}
+
+#define XTAL_FREQ		24000
+#define HDMI_FRAC_MAX_G12A	131072
+
+unsigned int get_g12a_pll_get_frac(unsigned int m, unsigned int pll_freq)
+{
+	unsigned int parent_freq = XTAL_FREQ;
+	unsigned int frac_max = HDMI_FRAC_MAX_G12A;
+	unsigned int frac_m;
+	unsigned int frac;
+
+	if (pll_freq / m == parent_freq &&
+	    pll_freq % m == 0)
+		return 0;
+
+	frac = div_u64((u64)pll_freq * (u64)frac_max, parent_freq);
+	frac_m = m * frac_max;
+	if (frac_m > frac)
+		return frac_max;
+	frac -= frac_m;
+
+	return min((u16)frac, (u16)(frac_max - 1));
 }
 
 static void set_hpll_clk_out(unsigned clk, struct hdmitx_dev *hdev)
@@ -602,7 +626,51 @@ static void set_hpll_clk_out(unsigned clk, struct hdmitx_dev *hdev)
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		break;
 	default:
-		printk("error hpll clk: %d\n", clk);
+		printk("error hpll clk: %d, try custombuilt\n", clk);
+		{
+			unsigned int m;
+			unsigned int ret;
+			unsigned int frac;
+
+			/* calculate m */
+			m = clk / XTAL_FREQ;
+			m &= 0xff;
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL0, (m | 0x3b000400));
+			pr_info("m 0x%x\n", m);
+
+			/* calculate frac */
+			frac = get_g12a_pll_get_frac(m, clk);
+			printf("m 0x%x, frac 0x%x\n", m, frac);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+
+			if (m >= 0xf7) {
+				if (frac < 0x10000) {
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x11551293);
+				} else {
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0xea68dc00);
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+				}
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x55540000);
+			} else {
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0a691c00);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x33771290);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+			}
+
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+			WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
+			printf("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+
+			ret = (((hd_read_reg(P_HHI_HDMI_PLL_CNTL0) >> 30) & 0x3) == 0x3);
+			if (ret)
+				printf("[%s] HPLL set OK!\n", __func__);
+			else
+				printf("[%s] Error! Check HPLL track!\n", __func__);
+		}
 		break;
 	}
 	printk("config HPLL done\n");
@@ -1020,6 +1088,12 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 		},
 		1, VIU_ENCP, 3197500, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 2, 1, 1, -1
 	},
+	{
+		{
+			HDMIV_CUSTOMBUILT, GROUP_END
+		},
+		1, VIU_ENCP, 5940000, 2, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1
+	}
 };
 
 /* For colordepth 10bits */
@@ -1189,6 +1263,7 @@ void hdmitx_set_clk_(struct hdmitx_dev *hdev)
 	enum hdmi_color_format cs = hdev->para->cs;
 	enum hdmi_color_depth cd = hdev->para->cd;
 	char *sspll_dis = NULL;
+	struct hdmi_cea_timing custom_timing = hdev->para->timing;
 
 	/* YUV 422 always use 24B mode */
 	if (cs == HDMI_COLOR_FORMAT_422)
@@ -1245,6 +1320,37 @@ void hdmitx_set_clk_(struct hdmitx_dev *hdev)
 	}
 
 next:
+	if (vic == HDMIV_CUSTOMBUILT) {
+		p_enc[j].hpll_clk_out = (custom_timing.pixel_freq * 10);
+		printf("[%s] vic == HDMI_CUSTOMBUILT, pixel_freq %d\n",
+				__func__, custom_timing.pixel_freq);
+		if (p_enc[j].hpll_clk_out > 2800000) {
+			p_enc[j].od1 = 1;
+			p_enc[j].od2 = 1;
+			p_enc[j].od3 = 2;
+		} else if (p_enc[j].hpll_clk_out <= 2800000
+				&& p_enc[j].hpll_clk_out > 1400000) {
+			p_enc[j].hpll_clk_out *= 2;
+			p_enc[j].od1 = 2;
+			p_enc[j].od2 = 1;
+			p_enc[j].od3 = 2;
+		} else if (p_enc[j].hpll_clk_out <= 1400000
+				&& p_enc[j].hpll_clk_out > 700000) {
+			p_enc[j].hpll_clk_out *= 4;
+			p_enc[j].od1 = 4;
+			p_enc[j].od2 = 1;
+			p_enc[j].od3 = 2;
+		} else {
+			p_enc[j].hpll_clk_out *= 8;
+			p_enc[j].od1 = 4;
+			p_enc[j].od2 = 2;
+			p_enc[j].od3 = 2;
+		}
+		printf("hpll_clk_out %d, od1 %d, od2 %d, od3 %d\n",
+			p_enc[j].hpll_clk_out,
+			p_enc[j].od1, p_enc[j].od2, p_enc[j].od3);
+	}
+
 	set_hdmitx_sys_clk();
 	set_hpll_clk_out(p_enc[j].hpll_clk_out, hdev);
 	sspll_dis = getenv("sspll_dis");

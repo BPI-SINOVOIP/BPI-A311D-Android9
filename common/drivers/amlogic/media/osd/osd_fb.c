@@ -67,6 +67,8 @@ static struct osd_device_data_s osd_meson_dev;
 char hdmimode_propname[20] = "null";
 char hdmichecksum_propname[20] = "null";
 char nativeui_propname[20] = "null";
+int custombuilt_width = 1920;
+int custombuilt_height = 1080;
 int recovery_flag;
 
 #define MAX_VPU_CLKC_CLK 500000000
@@ -4154,35 +4156,22 @@ static const struct of_device_id meson_fb_dt_match[] = {
 
 static void fb_def_var_set(int index)
 {
-
 	osd_log_info("fb_def_var_set \n");
-
 	fb_def_var[index].xres = var_screeninfo[0];
 	fb_def_var[index].yres = var_screeninfo[1];
 	fb_def_var[index].xres_virtual = var_screeninfo[2];
 	fb_def_var[index].yres_virtual = var_screeninfo[3];
 	fb_def_var[index].bits_per_pixel = var_screeninfo[4];
-
-	osd_log_info("init fbdev bpp is:%d\n", fb_def_var[index].bits_per_pixel);
-	if (fb_def_var[index].bits_per_pixel > 32)
-		fb_def_var[index].bits_per_pixel = 32;
-
 }
 
 static void fb_def_var_set_spec(int index,int xres,int yres,int xres_virtual,int yres_virtual,int bits_per_pixel)
 {
-
 	osd_log_info("fb_def_var_set_spec \n");
-
 	fb_def_var[index].xres = xres;
 	fb_def_var[index].yres = yres;
 	fb_def_var[index].xres_virtual = xres_virtual;
 	fb_def_var[index].yres_virtual = yres_virtual;
 	fb_def_var[index].bits_per_pixel = bits_per_pixel;
-
-	osd_log_info("init fbdev bpp is:%d\n", fb_def_var[index].bits_per_pixel);
-	if (fb_def_var[index].bits_per_pixel > 32)
-		fb_def_var[index].bits_per_pixel = 32;
 }
 
 static void fb_var_set_process(int index)
@@ -4191,16 +4180,16 @@ static void fb_var_set_process(int index)
 
 	osd_log_info(" fb_var_set_process \n");
 
-	if(recovery_flag != 1) {
-		osd_log_info("not recovery mode set \n");
-		fb_def_var_set(index);
-	} else if(recovery_flag == 1 && strncmp(hdmichecksum_propname, "0x00000000", 10) != 0) {
+	if(recovery_flag == 1 && strncmp(hdmichecksum_propname, "0x00000000", 10) != 0) {
 		(var_screeninfo[0] > 1920) ? (width = 1920) : (width = var_screeninfo[0]);
 		(var_screeninfo[1] > 1080) ? (height = 1080) : (height = var_screeninfo[1]);
 		osd_log_info("recovery mode lcd not exist hdmi insert, width=%d, height=%d\n", width, height);
 		fb_def_var_set_spec(index,width,height,width,height*2,32);
+	} else {
+		fb_def_var_set(index);
 	}
 }
+
 static int osd_probe(struct platform_device *pdev)
 {
 	struct fb_info *fbi = NULL;
@@ -4218,7 +4207,6 @@ static int osd_probe(struct platform_device *pdev)
 	#endif
 	int i;
 	int ret = 0;
-	int cpu_type = get_cpu_type();
 
 	if (pdev->dev.of_node) {
 		const struct of_device_id *match;
@@ -4511,17 +4499,15 @@ static int osd_probe(struct platform_device *pdev)
 						var_screeninfo[2] = 720;
 						var_screeninfo[3] = 1152;
 					} else if(strncmp(hdmimode_propname, "2160p", 5) == 0) {
-						if ((cpu_type == MESON_CPU_MAJOR_ID_G12B)) {
-							var_screeninfo[0] = 3840;
-							var_screeninfo[1] = 2160;
-							var_screeninfo[2] = 3840;
-							var_screeninfo[3] = 4320;
-						} else {
-							var_screeninfo[0] = 1920;
-							var_screeninfo[1] = 1080;
-							var_screeninfo[2] = 1920;
-							var_screeninfo[3] = 2160;
-						}
+						var_screeninfo[0] = 3840;
+						var_screeninfo[1] = 2160;
+						var_screeninfo[2] = 3840;
+						var_screeninfo[3] = 4320;
+					} else if(strncmp(hdmimode_propname, "custombuilt", 11)  == 0) {
+						var_screeninfo[0] = custombuilt_width;
+						var_screeninfo[1] = custombuilt_height;
+						var_screeninfo[2] = custombuilt_width == 1088 ? 1080 : custombuilt_width;
+						var_screeninfo[3] = custombuilt_height * 2;
 					} else {
 						/* set default fb from dts */
 						var_screeninfo[0] = 1920;
@@ -4531,22 +4517,19 @@ static int osd_probe(struct platform_device *pdev)
 					}
 				}
 
-				if ((cpu_type == MESON_CPU_MAJOR_ID_G12B) || (cpu_type == MESON_CPU_MAJOR_ID_SM1)) {
-					fb_var_set_process(index);
-				} else {
-					fb_def_var[index].xres = var_screeninfo[0];
-					fb_def_var[index].yres = var_screeninfo[1];
-					fb_def_var[index].xres_virtual =
-						var_screeninfo[2];
-					fb_def_var[index].yres_virtual =
-						var_screeninfo[3];
-					fb_def_var[index].bits_per_pixel =
-						var_screeninfo[4];
-					osd_log_info("init fbdev bpp is:%d\n",
-						fb_def_var[index].bits_per_pixel);
-					if (fb_def_var[index].bits_per_pixel > 32)
-						fb_def_var[index].bits_per_pixel = 32;
-				}
+				fb_var_set_process(index);
+
+				pr_info("fb def : %d %d %d %d %d\n",
+					fb_def_var[index].xres,
+					fb_def_var[index].yres,
+					fb_def_var[index].xres_virtual,
+					fb_def_var[index].yres_virtual,
+					fb_def_var[index].bits_per_pixel);
+				pr_info("init fbdev bpp is:%d\n",
+					fb_def_var[index].bits_per_pixel);
+
+				if (fb_def_var[index].bits_per_pixel > 32)
+					fb_def_var[index].bits_per_pixel = 32;
 			}
 		}
 
@@ -4852,7 +4835,30 @@ static int __init nativeui_setup(char *str)
 }
 
 __setup("nativeui=", nativeui_setup);
-subsys_initcall(osd_init_module);
+
+static int __init get_custombuilt_width(char *str)
+{
+        int ret;
+
+        ret = kstrtoint(str, 0, &custombuilt_width);
+        pr_info("custombuilt_width=%d\n", custombuilt_width);
+        return 0;
+}
+
+__setup("fb_width=", get_custombuilt_width);
+
+static int __init get_custombuilt_height(char *str)
+{
+        int ret;
+
+        ret = kstrtoint(str, 0, &custombuilt_height);
+        pr_info("custombuilt_height=%d\n", custombuilt_height);
+        return 0;
+}
+
+__setup("fb_height=", get_custombuilt_height);
+
+module_init(osd_init_module);
 module_exit(osd_exit_module);
 
 MODULE_AUTHOR("Platform-BJ <platform.bj@amlogic.com>");

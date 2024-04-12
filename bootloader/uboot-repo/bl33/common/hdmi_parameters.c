@@ -22,6 +22,30 @@ Description:
 #include <linux/stddef.h>
 #include <amlogic/hdmi.h>
 
+struct modeline_table {
+	/* resolutions */
+	unsigned int horpixels;
+	unsigned int verpixels;
+	/* clock and frequency */
+	unsigned int pixel_clock;
+	unsigned int hor_freq;
+	unsigned int ver_freq;
+	/* htimings */
+	unsigned int hdisp;
+	unsigned int hsyncstart;
+	unsigned int hsyncend;
+	unsigned int htotal;
+	/* vtiminigs */
+	unsigned int vdisp;
+	unsigned int vsyncstart;
+	unsigned int vsyncend;
+	unsigned int vtotal;
+	/* polarity and scan mode */
+	unsigned int hsync_polarity; /* 1:+hsync, 0:-hsync */
+	unsigned int vsync_polarity; /* 1:+vsync, 0:-vsync */
+	unsigned int progress_mode; /* 1:progress, 0:interlaced */
+};
+
 static struct hdmi_format_para fmt_para_1920x1080p60_16x9 = {
 	.vic = HDMI_1920x1080p60_16x9,
 	.name = "1920x1080p60hz",
@@ -2040,6 +2064,19 @@ static struct hdmi_format_para fmt_para_vesa_3440x1440p60_43x18 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_custombuilt = {
+	.vic = HDMIV_CUSTOMBUILT,
+	.name = "custombuilt",
+	.sname = "custombuilt",
+	.pixel_repetition_factor = 0,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.timing = {
+		.v_sync_ln = 1,
+	},
+};
+
+
 static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_3840x2160p60_y420_16x9,
 	&fmt_para_3840x2160p60_16x9,
@@ -2106,6 +2143,7 @@ static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_vesa_2560x1440p60_16x9,
 	&fmt_para_vesa_2560x1600p60_16x9,
 	&fmt_para_vesa_3440x1440p60_43x18,
+	&fmt_para_custombuilt,
 	&fmt_para_non_hdmi_fmt,
 	NULL,
 };
@@ -2179,6 +2217,104 @@ void hdmi_parse_attr(struct hdmi_format_para *para, char const *name)
 		para->cr = HDMI_COLOR_RANGE_FUL;
 }
 
+static void debug_hdmi_fmt_param(struct hdmi_format_para param)
+{
+	/* timing */
+	pr_info("fmt_para.timing\n");
+	pr_info("   - pixel_freq %d\n",
+			param.timing.pixel_freq);
+	pr_info("   - h_freq %d, v_freq %d\n",
+			param.timing.h_freq, param.timing.v_freq);
+	pr_info("   - hsync_polarity %d, vsync_polarity %d\n",
+			param.timing.hsync_polarity,
+			param.timing.vsync_polarity);
+	pr_info("   - h_active %d, h_total %d\n",
+			param.timing.h_active, param.timing.h_total);
+	pr_info("   - h_blank %d, h_front %d, h_sync %d, h_back %d\n",
+			param.timing.h_blank, param.timing.h_front,
+			param.timing.h_sync, param.timing.h_back);
+	pr_info("   - v_active %d, v_total %d\n",
+			param.timing.v_active, param.timing.v_total);
+	pr_info("   - v_blank %d, v_front %d, v_sync %d, v_back %d\n",
+			param.timing.v_blank, param.timing.v_front,
+			param.timing.v_sync, param.timing.v_back);
+	pr_info("   - v_sync_ln %d\n", param.timing.v_sync_ln);
+}
+
+/*
+ * assuming modeline information from command line is as following.
+ * setenv modeline
+ * "horpixels,verpixels,pixel_clock,hor_freq,ver_freq
+ * ,hdisp,hsyncstart,hsyncend,htotal,vdisp,vsyncstart,vsyncend,vtotal
+ * ,hsync_polarity,vsync_polarity,progress_mode"
+ */
+static void  hdmi_set_custombuild_timing(void)
+{
+	struct modeline_table tbl;
+	unsigned int *buf;
+	char *item = NULL;
+	unsigned long temp = 0;
+	int i = 0;
+	const char *modeline=getenv("modeline");
+	char *modeline_str = strdup(modeline);
+
+	/* 1. parsing modeline information from command line */
+	buf = (unsigned int *)&(tbl.horpixels);
+
+	while (modeline_str != NULL) {
+		item = strsep(&modeline_str, ",");
+		temp = simple_strtoul(item, NULL, 10);
+		*(buf + i) = temp;
+		i++;
+	}
+
+	/* 2. build hdmi_format_para */
+	fmt_para_custombuilt.progress_mode = tbl.progress_mode;
+	fmt_para_custombuilt.tmds_clk = tbl.pixel_clock;
+
+	/* timing */
+	fmt_para_custombuilt.timing.pixel_freq = tbl.pixel_clock;
+	fmt_para_custombuilt.timing.h_freq = tbl.hor_freq;
+	fmt_para_custombuilt.timing.v_freq = (tbl.ver_freq * 1000);
+	fmt_para_custombuilt.timing.hsync_polarity = tbl.hsync_polarity;
+	fmt_para_custombuilt.timing.vsync_polarity = tbl.vsync_polarity;
+	/* h_active = hdisp */
+	fmt_para_custombuilt.timing.h_active = tbl.hdisp;
+	/* h_total = htotal */
+	fmt_para_custombuilt.timing.h_total =  tbl.htotal;
+	/* h_blank = htotal - hdisp */
+	fmt_para_custombuilt.timing.h_blank = tbl.htotal - tbl.hdisp;
+	/* h_front = hsyncstart - hdisp */
+	fmt_para_custombuilt.timing.h_front = tbl.hsyncstart - tbl.hdisp;
+	/* h_sync = hsyncend - hsyncstart */
+	fmt_para_custombuilt.timing.h_sync = tbl.hsyncend - tbl.hsyncstart;
+	/* h_back = (h_blank - (h_front + h_sync))*/
+	fmt_para_custombuilt.timing.h_back
+		= fmt_para_custombuilt.timing.h_blank
+		- fmt_para_custombuilt.timing.h_front
+		- fmt_para_custombuilt.timing.h_sync;
+	/* v_active = vdisp */
+	fmt_para_custombuilt.timing.v_active = tbl.vdisp;
+	/* v_total = vtotal */
+	fmt_para_custombuilt.timing.v_total = tbl.vtotal;
+	/* v_blank = vtotal - vdisp */
+	fmt_para_custombuilt.timing.v_blank = tbl.vtotal - tbl.vdisp;
+	/* v_front = vsyncstart - vdisp */
+	fmt_para_custombuilt.timing.v_front = tbl.vsyncstart - tbl.vdisp;
+	/* v_sync = vsyncend - vsyncstart */
+	fmt_para_custombuilt.timing.v_sync = tbl.vsyncend - tbl.vsyncstart;
+	/* v_back = (v_blank - (v_front + v_sync)) */
+	fmt_para_custombuilt.timing.v_back
+		= fmt_para_custombuilt.timing.v_blank
+		- fmt_para_custombuilt.timing.v_front
+		- fmt_para_custombuilt.timing.v_sync;
+	fmt_para_custombuilt.timing.v_sync_ln = 1;
+
+	/* check parameters */
+	debug_hdmi_fmt_param(fmt_para_custombuilt);
+}
+
+
 /*
  * Paramter 'name' can be 1080p60hz, or 1920x1080p60hz
  * or 3840x2160p60hz, 2160p60hz
@@ -2211,6 +2347,10 @@ enum hdmi_vic hdmi_get_fmt_vic(char const *name)
 		memcpy(&para->ext_name[0], name, strlen(name));
 		hdmi_parse_attr(para, name);
 	}
+
+	if (vic == HDMIV_CUSTOMBUILT)
+		hdmi_set_custombuild_timing();
+
 	return vic;
 }
 

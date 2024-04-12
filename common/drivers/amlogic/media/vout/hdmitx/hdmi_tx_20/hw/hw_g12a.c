@@ -192,6 +192,29 @@ static void set_hpll_hclk_dongle_5940m(void)
 	pr_info("HPLL: 0x%x\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 }
 
+#define XTAL_FREQ		24000
+#define HDMI_FRAC_MAX_G12A	131072
+
+unsigned int get_g12a_pll_get_frac(unsigned int m, unsigned int pll_freq)
+{
+	unsigned int parent_freq = XTAL_FREQ;
+	unsigned int frac_max = HDMI_FRAC_MAX_G12A;
+	unsigned int frac_m;
+	unsigned int frac;
+
+	if (pll_freq / m == parent_freq &&
+	    pll_freq % m == 0)
+		return 0;
+
+	frac = div_u64((u64)pll_freq * (u64)frac_max, parent_freq);
+	frac_m = m * frac_max;
+	if (frac_m > frac)
+		return frac_max;
+	frac -= frac_m;
+
+	return min((u16)frac, (u16)(frac_max - 1));
+}
+
 void set_g12a_hpll_clk_out(unsigned int frac_rate, unsigned int clk)
 {
 	struct hdmitx_dev *hdev = get_hdmitx_device();
@@ -604,6 +627,51 @@ void set_g12a_hpll_clk_out(unsigned int frac_rate, unsigned int clk)
 		break;
 	default:
 		pr_info("error hpll clk: %d\n", clk);
+
+		{
+			unsigned int m;
+			unsigned int ret;
+			unsigned int frac;
+
+			/* calculate m */
+			m = clk / XTAL_FREQ;
+			m &= 0xff;
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL0, (m | 0x3b000400));
+			pr_info("m 0x%x\n", m);
+
+			/* calculate frac */
+			frac = get_g12a_pll_get_frac(m, clk);
+			pr_info("m 0x%x, frac 0x%x\n", m, frac);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+
+			if (m >= 0xf7) {
+				if (frac < 0x10000) {
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x11551293);
+				} else {
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0xea68dc00);
+					hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+				}
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x55540000);
+			} else {
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0a691c00);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x33771290);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
+				hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+			}
+
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+			WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
+			pr_info("HPLL: 0x%x\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+
+			ret = (((hd_read_reg(P_HHI_HDMI_PLL_CNTL0) >> 30) & 0x3) == 0x3);
+			if (ret)
+				pr_info("[%s] HPLL set OK!\n", __func__);
+			else
+				pr_info("[%s] Error! Check HPLL track!\n", __func__);
+		}
 		break;
 	}
 }

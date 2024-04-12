@@ -1020,27 +1020,27 @@ static const struct reg_t tvregs_vesa_2560x1440p60hz[] = {
 };
 
 static const struct reg_t tvregs_vesa_2560x1600p60hz[] = {
-   {P_ENCP_VIDEO_EN, 0,},
-   {P_ENCI_VIDEO_EN, 0,},
+	{P_ENCP_VIDEO_EN, 0,},
+	{P_ENCI_VIDEO_EN, 0,},
 
-   {P_ENCP_VIDEO_MODE, 0x4040,},
-   {P_ENCP_VIDEO_MODE_ADV, 0x18,},
-   {P_ENCP_VIDEO_MAX_PXCNT, 0xBA3,},
-   {P_ENCP_VIDEO_MAX_LNCNT, 0x673,},
-   {P_ENCP_VIDEO_HAVON_BEGIN, 0x10C,},
-   {P_ENCP_VIDEO_HAVON_END, 0xB0B,},
-   {P_ENCP_VIDEO_VAVON_BLINE, 0xA,},
-   {P_ENCP_VIDEO_VAVON_ELINE, 0x649,},
-   {P_ENCP_VIDEO_HSO_BEGIN, 0x0,},
-   {P_ENCP_VIDEO_HSO_END, 0x20,},
-   {P_ENCP_VIDEO_VSO_BEGIN, 0x1E,},
-   {P_ENCP_VIDEO_VSO_END, 0x32,},
-   {P_ENCP_VIDEO_VSO_BLINE, 0x0,},
-   {P_ENCP_VIDEO_VSO_ELINE, 0xA,},
+	{P_ENCP_VIDEO_MODE, 0x4040,},
+	{P_ENCP_VIDEO_MODE_ADV, 0x18,},
+	{P_ENCP_VIDEO_MAX_PXCNT, 0xBA3,},
+	{P_ENCP_VIDEO_MAX_LNCNT, 0x673,},
+	{P_ENCP_VIDEO_HAVON_BEGIN, 0x10C,},
+	{P_ENCP_VIDEO_HAVON_END, 0xB0B,},
+	{P_ENCP_VIDEO_VAVON_BLINE, 0xA,},
+	{P_ENCP_VIDEO_VAVON_ELINE, 0x649,},
+	{P_ENCP_VIDEO_HSO_BEGIN, 0x0,},
+	{P_ENCP_VIDEO_HSO_END, 0x20,},
+	{P_ENCP_VIDEO_VSO_BEGIN, 0x1E,},
+	{P_ENCP_VIDEO_VSO_END, 0x32,},
+	{P_ENCP_VIDEO_VSO_BLINE, 0x0,},
+	{P_ENCP_VIDEO_VSO_ELINE, 0xA,},
 
-   {P_ENCP_VIDEO_EN, 1,},
-   {P_ENCI_VIDEO_EN, 0},
-   {MREG_END_MARKER, 0}
+	{P_ENCP_VIDEO_EN, 1,},
+	{P_ENCI_VIDEO_EN, 0},
+	{MREG_END_MARKER, 0}
 };
 
 static const struct reg_t tvregs_vesa_3440x1440p60hz[] = {
@@ -1127,6 +1127,36 @@ static struct vic_tvregs_set tvregsTab[] = {
 	{HDMIV_3440x1440p60hz, tvregs_vesa_3440x1440p60hz},
 };
 
+static void build_custom_vic_tvregs(struct hdmitx_dev *hdev)
+{
+	struct hdmi_cea_timing custom_timing = hdev->para->timing;
+
+	hd_write_reg(P_ENCP_VIDEO_EN, 0);
+	hd_write_reg(P_ENCI_VIDEO_EN, 0);
+
+	hd_write_reg(P_ENCP_VIDEO_MODE, 0x4040);
+	hd_write_reg(P_ENCP_VIDEO_MODE_ADV, 0x18);
+
+	hd_write_reg(P_ENCP_VIDEO_MAX_PXCNT, (custom_timing.h_total - 1));
+	hd_write_reg(P_ENCP_VIDEO_MAX_LNCNT, (custom_timing.v_total - 1));
+
+	hd_write_reg(P_ENCP_VIDEO_HAVON_BEGIN, custom_timing.h_back);
+	hd_write_reg(P_ENCP_VIDEO_HAVON_END,
+		((custom_timing.h_back + custom_timing.h_active) - 1));
+	hd_write_reg(P_ENCP_VIDEO_VAVON_BLINE, custom_timing.v_back);
+	hd_write_reg(P_ENCP_VIDEO_VAVON_ELINE,
+		((custom_timing.v_back + custom_timing.v_active) - 1));
+
+	hd_write_reg(P_ENCP_VIDEO_HSO_BEGIN, 0);
+	hd_write_reg(P_ENCP_VIDEO_HSO_END, custom_timing.h_sync);
+	hd_write_reg(P_ENCP_VIDEO_VSO_BEGIN, 0x1E);
+	hd_write_reg(P_ENCP_VIDEO_VSO_END, 0x32);
+	hd_write_reg(P_ENCP_VIDEO_VSO_BLINE, 0x0);
+	hd_write_reg(P_ENCP_VIDEO_VSO_ELINE, custom_timing.v_sync);
+	hd_write_reg(P_ENCP_VIDEO_EN, 1);
+	hd_write_reg(P_ENCI_VIDEO_EN, 0);
+}
+
 static inline void setreg(const struct reg_t *r)
 {
 	hd_write_reg(r->reg, r->val);
@@ -1143,9 +1173,17 @@ static const struct reg_t *tvregs_setting_mode(enum hdmi_vic vic)
 	return NULL;
 }
 
-void set_vmode_enc_hw(enum hdmi_vic vic)
+void set_vmode_enc_hw(struct hdmitx_dev *hdev)
 {
-	const struct reg_t *s = tvregs_setting_mode(vic);
+	enum hdmi_vic vic = hdev->vic;
+	const struct reg_t *s;
+
+	if (vic == HDMIV_CUSTOMBUILT) {
+		build_custom_vic_tvregs(hdev);
+		return;
+	}
+
+	s = tvregs_setting_mode(vic);
 
 	if (s) {
 		pr_info("hdmitx: set enc for VIC: %d\n", vic);

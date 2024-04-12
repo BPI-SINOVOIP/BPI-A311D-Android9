@@ -279,6 +279,9 @@ using namespace android;
 
 #define UBOOTENV_REBOOT_MODE           "ubootenv.var.reboot_mode_android"
 
+#define UBOOTENV_CUSTOMWIDTH            "ubootenv.var.customwidth"
+#define UBOOTENV_CUSTOMHEIGHT           "ubootenv.var.customheight"
+
 #define UBOOTENV_SDR2HDR               "ubootenv.var.sdr2hdr"
 #define PROP_DEEPCOLOR_CTL              "persist.sys.open.deepcolor" // 8, 10, 12
 #define PROP_PIXFMT                     "persist.sys.open.pixfmt" // rgb, ycbcr
@@ -438,6 +441,7 @@ enum {
 #define MODE_2560x1440P_PREFIX          "2560x1440p"
 #define MODE_2560x1600P_PREFIX          "2560x1600p"
 #define MODE_3440x1440P_PREFIX          "3440x1440p"
+#define MODE_CUSTOMBUILT_PREFIX         "custombuilt"
 
 //DOLBY_VISION_HDR10_POLICY : /sys/module/amdolby_vision/parameters/dolby_vision_hdr10_policy
 #define DV_HDR_SINK_SOURCE_BYPASS       "0"

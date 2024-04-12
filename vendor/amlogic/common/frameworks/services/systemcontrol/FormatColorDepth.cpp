@@ -242,6 +242,9 @@ bool FormatColorDepth::isModeSupportDeepColorAttr(const char *mode, const char *
     SYS_LOGI("isModeSupportDeepColorAttr mode = %s, color = %s\n",mode,color);
     strcpy(outputmode, mode);
     strcat(outputmode, color);
+    // custombuilt mode avoid the routine.
+    if(!strcmp(mode, "custombuilt"))
+        return true;
     if (isFilterEdid() && !strstr(color,"8bit")) {
         SYS_LOGI("this mode has been filtered\n");
         return false;

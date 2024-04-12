@@ -321,6 +321,7 @@ void DisplayMode::init() {
         pTxAuth->setUevntCallback(this);
         pTxAuth->setFRAutoAdpt(new FrameRateAutoAdaption(this));
         if (mIsRecovery) {
+            /* bpi, recovery display */
             setTvRecoveryDisplay();
         } else {
             setSourceDisplay(OUPUT_MODE_STATE_INIT);
@@ -515,6 +516,7 @@ void DisplayMode::setTvRecoveryDisplay() {
     SYS_LOGI("setTvRecoveryDisplay\n");
     char outputmode[MODE_LEN] = {0};
     pSysWrite->readSysfs(SYSFS_DISPLAY_MODE,outputmode);
+    strcpy(mDefaultUI, outputmode);
     updateDefaultUI();
 
     usleep(1000000LL);
@@ -576,7 +578,7 @@ void DisplayMode::setSourceDisplay(output_mode_state state) {
         if (strlen(value) == 0) {
             strcpy(value, "1080p60hz");
         }
-        SYS_LOGE("getBootEnv(%s, %s)\n", UBOOTENV_HDMIMODE, value);
+        SYS_LOGI("getBootEnv(%s, %s)\n", UBOOTENV_HDMIMODE, value);
     }
     strcpy(outputmode, value);
     strcpy(mDefaultUI, value);
@@ -753,6 +755,13 @@ void DisplayMode::setSourceOutputMode(const char* outputmode, output_mode_state 
     char defaultResolution[MODE_LEN] = {0};
     pSysWrite->getPropertyString(PROP_DISPLAY_SIZE, defaultResolution, "0x0");
     SYS_LOGI("set display-size:%s\n", defaultResolution);
+
+    // no need to update
+    // update free_scale_axis and window_axis in recovery mode
+#ifdef RECOVERY_MODE
+    updateFreeScaleAxis();
+    updateWindowAxis(outputmode);
+#endif
 
     if (!cvbsMode && (pSysWrite->getPropertyBoolean(PROP_SUPPORT_DOLBY_VISION, false) == false)) {
         if (pSysWrite->getPropertyBoolean(PROP_DOLBY_VISION_FEATURE, false)) {
@@ -1480,6 +1489,16 @@ void DisplayMode::updateDefaultUI() {
          */
         mDisplayWidth = 3840;  //1920;
         mDisplayHeight = 2160;  //1080;
+    } else if (!strncmp(mDefaultUI, "custombuilt", 11)) {
+        char value[64];
+        getBootEnv(UBOOTENV_CUSTOMWIDTH, value);
+        mDisplayWidth = atoi(value);
+
+        memset(value, strlen(value), '\0');
+        getBootEnv(UBOOTENV_CUSTOMHEIGHT, value);
+        mDisplayHeight = atoi(value);
+
+        SYS_LOGI("%s custombuilt mDisplayWidth = %d mDisplayHeight = %d", __func__, mDisplayWidth, mDisplayHeight);
     }
 
     /* bpi, fix recovery display */
@@ -1706,6 +1725,10 @@ void DisplayMode::getPosition(const char* curMode, int *position) {
         strcpy(keyValue, MODE_3440x1440P_PREFIX);
         defaultWidth = FULL_WIDTH_3440x1440;
         defaultHeight = FULL_HEIGHT_3440x1440;
+    } else if (strstr(curMode, MODE_CUSTOMBUILT_PREFIX)) {
+		strcpy(keyValue, MODE_CUSTOMBUILT_PREFIX);
+        defaultWidth = mDisplayWidth;
+        defaultHeight = mDisplayHeight;
     } else if (strstr(curMode, MODE_PANEL) && (isLcdExist() == 1)) {
         strcpy(keyValue, MODE_PANEL);
 		pSysWrite->getPropertyString("persist.sys.builtin.ui_mode", uiMode,"");
@@ -1862,6 +1885,8 @@ void DisplayMode::setPosition(int left, int top, int width, int height) {
         strcpy(keyValue, MODE_2560x1600P_PREFIX);
     } else if (strstr(curMode, MODE_3440x1440P_PREFIX)) {
         strcpy(keyValue, MODE_3440x1440P_PREFIX);
+    } else if (strstr(curMode, MODE_CUSTOMBUILT_PREFIX)) {
+        strcpy(keyValue, MODE_CUSTOMBUILT_PREFIX);
     } else if (strstr(curMode, MODE_PANEL)) {
         strcpy(keyValue, MODE_PANEL);
 		return;

@@ -371,6 +371,7 @@ static struct hdmi_support_mode gxbb_modes[] = {
 	{HDMIV_2560x1440p60hz, "2560x1440p60hz", 0},
 	{HDMIV_2560x1600p60hz, "2560x1600p60hz", 0},
 	{HDMIV_3440x1440p60hz, "3440x1440p60hz", 0},
+	{HDMIV_CUSTOMBUILT, "custombuilt", 0},
 };
 
 static void hdmitx_list_support_modes(void)
@@ -455,6 +456,9 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 	hdmitx_debug();
 	//kernel will determine output mode on its own
 	setenv("hdmimode", getenv("outputmode"));
+	/* bpi, set real fb_width and fb_height */
+	setenv_ulong("fb_width", hdev->para->timing.h_active);
+	setenv_ulong("fb_height", hdev->para->timing.v_active);
 
 	//null char needed to terminate the string otherwise garbage in checksum logopara
 	memcpy(checksum, hdev->RXCap.checksum, 10);
@@ -1306,10 +1310,10 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 } /* config_hdmi20_tx */
 
 /* Set TV encoder for HDMI */
-static void hdmitx_enc(enum hdmi_vic vic)
+static void hdmitx_enc(struct hdmitx_dev *hdev)
 {
-	set_vmode_enc_hw(vic);
-	hdmi_tvenc_set(vic);
+	set_vmode_enc_hw(hdev);
+	hdmi_tvenc_set(hdev->vic);
 	return;
 }
 
@@ -3198,7 +3202,7 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 		return;
 	}
 	hdmitx_set_pll(hdev);
-	hdmitx_enc(hdev->vic);
+	hdmitx_enc(hdev);
 	hdmitx_set_dith(hdev);
 	hdmitx_set_phy(hdev);
 	hdmitx_set_vdac(0);
