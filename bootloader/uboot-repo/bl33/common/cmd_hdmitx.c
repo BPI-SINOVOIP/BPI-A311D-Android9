@@ -207,6 +207,9 @@ READ_EDID:
 		} else {
 			/* select best resolution */
 			setenv("hdmimode", select_best_resolution(&width, &height));
+			/* bpi, set real fb_width and fb_height */
+			setenv_ulong("fb_width", width);
+			setenv_ulong("fb_height", height);
 		}
 
 		setenv("vout", getenv("hdmimode"));

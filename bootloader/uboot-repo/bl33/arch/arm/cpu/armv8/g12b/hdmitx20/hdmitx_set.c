@@ -456,9 +456,6 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 	hdmitx_debug();
 	//kernel will determine output mode on its own
 	setenv("hdmimode", getenv("outputmode"));
-	/* bpi, set real fb_width and fb_height */
-	setenv_ulong("fb_width", hdev->para->timing.h_active);
-	setenv_ulong("fb_height", hdev->para->timing.v_active);
 
 	//null char needed to terminate the string otherwise garbage in checksum logopara
 	memcpy(checksum, hdev->RXCap.checksum, 10);

@@ -104,8 +104,8 @@
         "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
         "fb_addr=0x3d800000\0" \
-        "fb_width=1280\0" \
-        "fb_height=720\0" \
+        "fb_width=1920\0" \
+        "fb_height=1080\0" \
         "frac_rate_policy=1\0" \
         "hdr_policy=0\0" \
         "hdmi_read_edid=1\0" \

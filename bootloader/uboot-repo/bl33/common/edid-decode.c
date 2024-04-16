@@ -2238,6 +2238,12 @@ char *select_best_resolution(int *fb_width, int *fb_height)
 DONE:
 	printf("bestmode is %s, IEEEOUI 0x%06x\n", bestmode, IEEEOUI);
 
+	/* force 4k fb_width=1920, fb_height=1080 for uboot logo display */
+	if (width == 3840) {
+		width = 1920;
+		height = 1080;
+	}
+
 	*fb_width = width;
 	*fb_height = height;
 
