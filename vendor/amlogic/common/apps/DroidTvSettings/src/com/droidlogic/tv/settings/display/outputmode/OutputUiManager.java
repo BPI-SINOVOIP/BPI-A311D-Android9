@@ -93,7 +93,8 @@ public class OutputUiManager {
         "800x600p60hz",
         "800x480p60hz",
         "640x480p60hz",
-        "480x320p60hz"
+        "480x320p60hz",
+	"custombuilt"
     };
     private static final String[] HDMI_TITLE = {
         "4k2k-60hz",
@@ -132,7 +133,8 @@ public class OutputUiManager {
         "800x600p60hz",
         "800x480p60hz",
         "640x480p60hz",
-        "480x320p60hz"
+        "480x320p60hz",
+	"custombuilt"
     };
 
     private static final String[] HDMI_COLOR_LIST = {
