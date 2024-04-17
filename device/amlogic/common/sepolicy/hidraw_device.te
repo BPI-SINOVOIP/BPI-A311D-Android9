@@ -1,1 +1,0 @@
-allow hidraw_device tmpfs: filesystem { associate };
