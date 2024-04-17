@@ -441,4 +441,6 @@
     <string name="screen_density_240">240</string>
     <string name="screen_density_280">280</string>
     <string name="screen_density_320">320</string>
+    <string name="screen_density_360">360</string>
+    <string name="screen_density_420">420</string>
 </resources>
