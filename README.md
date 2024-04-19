@@ -29,6 +29,7 @@ Another way is get the source code tar archive from [BaiduPan(pincode: 8888)](ht
 
 **Build**
 
+    $ cd BPI-A311D-Android9
     $ source env.sh
     $ ./device/bananapi/common/quick_compile.sh
     
