@@ -1,2 +1,0 @@
-allow wificond kernel:system module_request;
-allow wificond proc_modules:file { read open getattr };

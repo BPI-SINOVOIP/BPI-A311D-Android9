@@ -17,6 +17,10 @@
 
 #include <HwDisplayManager.h>
 
+#include <cutils/properties.h>
+
+#define HWC_BOOTED_PROP "vendor.sys.hwc.booted"
+
 HwcDisplayPipe::PipeStat::PipeStat(uint32_t id) {
     hwcId = id;
     cfg.hwcCrtcId = cfg.modeCrtcId = 0;
@@ -59,7 +63,34 @@ int32_t HwcDisplayPipe::init(std::map<uint32_t, std::shared_ptr<HwcDisplay>> & h
         stat->hwcDisplay = dispIt->second;
         /*set modeMgr*/
         uint32_t fbW = 0, fbH = 0;
-        HwcConfig::getFramebufferSize (hwcId, fbW, fbH);
+
+		const char * nativeui_key = "ubootenv.var.nativeui";
+        std::string nativeui_status;
+
+        if (0 == sc_read_bootenv(nativeui_key, nativeui_status)) {
+             MESON_LOGE("sc_read_bootenv(%s) from uboot", nativeui_status.c_str());
+        }
+
+		if((strncmp(nativeui_status.c_str(),"enable",6)==0) && (HwcConfig::isLcdExist() == 0)) {
+             char val[PROP_VALUE_LEN_MAX];
+             std::string mode;
+             sc_get_display_mode(mode);
+             MESON_LOGI("Get hdmimode(%s) from systemcontrol service", mode.c_str());
+             if (strncmp(mode.c_str(), "2160p", 5) == 0) {
+                 if (sys_get_string_prop("ro.board.platform", val) > 0 && strcmp(val, "g12b") != 0)
+                     return 0;
+             }
+             int calibrateCoordinates[4];
+             std::string dispModeStr(mode);
+             if (0 == sc_get_osd_position(dispModeStr, calibrateCoordinates)) {
+                  fbW = calibrateCoordinates[2];
+                  fbH = calibrateCoordinates[3];
+                  MESON_LOGI("~FixedDisplayPipe HwcConfig::fbW %d fbH:%d",fbW,fbH);
+             }
+        } else {
+        	HwcConfig::getFramebufferSize (hwcId, fbW, fbH);
+		}
+
         std::shared_ptr<HwcModeMgr> modeMgr =
         createModeMgr(HwcConfig::getModePolicy(hwcId));
         modeMgr->setFramebufferSize(fbW, fbH);
@@ -74,6 +105,8 @@ int32_t HwcDisplayPipe::init(std::map<uint32_t, std::shared_ptr<HwcDisplay>> & h
             MESON_LOGD("composer service has restarted, need blank display");
             stat->hwcDisplay->blankDisplay();
         }
+
+        sc_set_property(HWC_BOOTED_PROP, "true");
     }
 
     return 0;

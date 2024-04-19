@@ -542,11 +542,34 @@ PRODUCT_PROPERTY_OVERRIDES += \
 #
 #########################################################################
 PRODUCT_PACKAGES += \
-    Launcher3
+    Launcher3QuickStep \
+    Settings \
+    SettingsIntelligence
 
 #Add Simple setupwizard to set Settings.Secure.USER_SETUP=1 for notice that user setup complete
 PRODUCT_PACKAGES += \
     Provision
+#########################################################################
+#
+#                            opengapps
+#
+#########################################################################
+BOARD_BUILD_OPENGAPPS := false
+
+ifeq ($(BOARD_BUILD_OPENGAPPS), true)
+GAPPS_VARIANT := pico
+GAPPS_PRODUCT_PACKAGES += Chrome
+GAPPS_EXCLUDED_PACKAGES := SetupWizard
+
+# opengapps, github.com/opengapps/aosp_build
+$(call inherit-product-if-exists, vendor/opengapps/build/opengapps-packages.mk)
+
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+	ro.build.fingerprint=google/bonito/bonito:9/PQ3B.190801.002/5674421:user/release-keys
+
+#PRODUCT_BROKEN_VERIFY_USES_LIBRARIES := true
+#DONT_DEXPREOPT_PREBUILTS := true
+endif
 #########################################################################
 #
 #                            factory test
@@ -575,10 +598,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
 ifeq ($(BPI_FACTORY_TEST), true)
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=160 \
-    ro.sf.primary_display_orientation=90
+    ro.sf.primary_display_orientation=90 \
+    ro.sf.primary_tp_orientation=90
 else
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sf.lcd_density=213 \
-    ro.sf.primary_display_orientation=0
+    ro.sf.lcd_density=213
 endif
+
+#PRODUCT_PROPERTY_OVERRIDES += \
+#    ro.sf.primary_tp_orientation=90
 

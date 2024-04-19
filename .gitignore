@@ -10,3 +10,5 @@
 /prebuilts/tools/darwin-x86_64/bazel/bazel-real
 /prebuilts/jdk/jdk9/darwin-x86/lib/modules
 /prebuilts/jdk/jdk9/linux-x86/lib/modules
+/vendor/bananapi
+/vendor/opengapps

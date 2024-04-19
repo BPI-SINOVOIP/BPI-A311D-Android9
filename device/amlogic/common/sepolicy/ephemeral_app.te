@@ -1,3 +1,0 @@
-allow ephemeral_app shell_data_file:dir { search };
-
-allow ephemeral_app debugfs_mali:dir { search };

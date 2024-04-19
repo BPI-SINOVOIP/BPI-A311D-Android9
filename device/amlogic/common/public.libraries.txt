@@ -1,3 +1,0 @@
-libsystemcontrol_jni.so
-libtv_jni.so
-libscreencontrol_jni.so

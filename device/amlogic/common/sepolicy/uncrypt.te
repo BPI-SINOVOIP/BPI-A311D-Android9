@@ -1,2 +1,0 @@
-allow uncrypt cache_file:dir {getattr};
-allow uncrypt cache_file:file {open read getattr};
